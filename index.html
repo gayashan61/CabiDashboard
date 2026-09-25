@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Production KPI Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/config.js"></script>
+<script src="assets/theme.js"></script>
+</head>
+<body>
+<main class="landing">
+  <div class="landing-top">
+    <div class="brand-mark" id="logo"></div>
+    <div style="flex:1"><h1 id="title">Production KPI Dashboard</h1><p class="sub">Choose a screen for the wall TV, or open the admin console.</p></div>
+    <button class="icon-btn theme-toggle" id="theme-btn" title="Switch light / dark theme" aria-label="Switch light or dark theme"></button>
+  </div>
+  <div class="links">
+    <a href="tv-slides.html"><div class="ico" data-i="play"></div><b>Slideshow</b><span>Team overview, then one slide per person. Rotates automatically.</span></a>
+    <a href="tv-grid.html"><div class="ico" data-i="grid"></div><b>Team grid</b><span>Every team member on one screen as live tiles.</span></a>
+    <a href="tv-departments.html"><div class="ico" data-i="list"></div><b>Departments</b><span>A ranked leaderboard for each department.</span></a>
+    <a href="admin.html"><div class="ico" data-i="edit"></div><b>Admin console</b><span>Enter daily output, set targets, manage employees.</span></a>
+  </div>
+  <div class="card tips">
+    <b>TV tips</b><br>
+    Press <b>F11</b> or the full-screen button for full screen ·
+    Force a theme: <code>tv-grid.html?theme=light</code> or <code>?theme=dark</code> ·
+    Hide the buttons and navigation: <code>&amp;kiosk=1</code> ·
+    Seconds per slide: <code>tv-slides.html?interval=15</code>
+  </div>
+</main>
+<script src="assets/seed-data.js"></script>
+<script src="assets/core.js"></script>
+<script>
+  document.getElementById("title").textContent = KPI_CONFIG.COMPANY_NAME;
+  document.getElementById("logo").innerHTML = KPI.ICONS.logo;
+  document.querySelectorAll("[data-i]").forEach((e) => (e.innerHTML = KPI.ICONS[e.dataset.i]));
+  const tb = document.getElementById("theme-btn");
+  tb.innerHTML = KPI.ICONS.moon + KPI.ICONS.sun;
+  tb.onclick = () => KPITheme.toggle();
+</script>
+</body>
+</html>

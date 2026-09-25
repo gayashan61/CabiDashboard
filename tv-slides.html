@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slideshow · Production KPI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/config.js"></script>
+<script src="assets/theme.js"></script>
+<style>
+  .stage { position: relative; height: 100%; }
+  .slide { position: absolute; inset: 0; opacity: 0; transform: translateY(8px); transition: opacity .6s ease, transform .6s ease; display: grid; gap: 1.3rem; pointer-events: none; }
+  .slide.on { opacity: 1; transform: none; pointer-events: auto; }
+  .slidebar { display: flex; align-items: center; gap: 1rem; padding: 0.7rem 2rem; background: var(--surface); border-top: 1px solid var(--border); }
+  .slidebar .lbl { font-size: 0.9rem; color: var(--muted); white-space: nowrap; min-width: 9rem; font-variant-numeric: tabular-nums; }
+  .progress { flex: 1; display: flex; gap: 0.3rem; }
+  .progress i { flex: 1; height: 0.3rem; border-radius: 999px; background: var(--surface-3); overflow: hidden; position: relative; }
+  .progress i.done { background: var(--axis); }
+  .progress i.on > b { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 999px; }
+  .panel { padding: 1.4rem 1.6rem; display: flex; flex-direction: column; min-height: 0; }
+
+  /* overview */
+  .ov { grid-template-columns: 0.9fr 1.3fr 1fr; grid-template-rows: auto minmax(0, 1fr); }
+  .kpis { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.3rem; }
+  .kpi { padding: 1.3rem 1.5rem; display: flex; flex-direction: column; gap: 0.55rem; }
+  .kpi-l { color: var(--ink-2); font-size: 1rem; font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
+  .kpi-v { font-size: 3.6rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  .kpi-v span { font-size: 1.8rem; color: var(--muted); font-weight: 600; letter-spacing: 0; }
+  .kpi-s { color: var(--muted); font-size: 0.92rem; }
+  .kpi .bar { height: 0.45rem; margin-top: 0.2rem; }
+  .lb { display: flex; flex-direction: column; flex: 1; justify-content: space-around; }
+  .lb-row { display: grid; grid-template-columns: 2.2rem 3.4rem minmax(0, 1fr) auto; align-items: center; gap: 1rem; padding: 0.55rem 0; border-bottom: 1px solid var(--grid); }
+  .lb-row:last-child { border-bottom: 0; }
+  .lb-rank { width: 2.2rem; height: 2.2rem; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 1.15rem; background: var(--surface-2); color: var(--ink-2); }
+  .lb-rank.r1 { background: var(--warning-soft); color: var(--warning-ink); }
+  .lb-name { font-weight: 700; font-size: 1.4rem; letter-spacing: -0.01em; }
+  .lb-name small { display: flex; align-items: center; font-size: 0.9rem; font-weight: 500; color: var(--muted); letter-spacing: 0; margin-top: 0.1rem; }
+  .lb-val { text-align: right; font-weight: 800; font-size: 1.6rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .dept-row { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 4.5rem; align-items: center; gap: 0.9rem; font-size: 1.2rem; white-space: nowrap; font-weight: 600; }
+  .dept-row > div:first-child { display: flex; align-items: center; }
+  .dept-row .bar { height: 1rem; }
+  .dept-row .v { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* person */
+  .ps { grid-template-columns: 1fr 1.3fr; grid-template-rows: auto minmax(0, 1fr); }
+  .ps-head { grid-column: 1 / -1; display: flex; align-items: center; gap: 1.6rem; padding: 1.4rem 1.8rem; }
+  .avatar { width: 6rem; height: 6rem; border-radius: 1.4rem; display: grid; place-items: center; font-size: 2.6rem; font-weight: 800; color: #fff; background: var(--dc); flex: 0 0 auto; }
+  .ps-name { font-size: 3.6rem; font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; }
+  .ps-dept { font-size: 1.2rem; color: var(--muted); display: flex; align-items: center; margin-top: 0.3rem; font-weight: 500; }
+  .ps-score { margin-left: auto; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; }
+  .ps-score .big { font-size: 5.6rem; font-weight: 800; line-height: 0.9; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+  .ps-score .pill { font-size: 1.1rem; }
+  .ps-mini { display: flex; gap: 2.2rem; padding-left: 2.2rem; margin-left: 1.2rem; border-left: 1px solid var(--border); }
+  .ps-mini div { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  .ps-mini b { display: block; font-size: 2rem; color: var(--ink); letter-spacing: -0.02em; text-transform: none; font-variant-numeric: tabular-nums; }
+  .tasks { display: flex; flex-direction: column; gap: 1.5rem; }
+  .task-h { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: 1.3rem; margin-bottom: 0.55rem; font-weight: 500; }
+  .task-h b { font-size: 1.7rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .task-h .of { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .tasks .bar { height: 0.9rem; }
+  .chart-area { flex: 1; position: relative; min-height: 0; }
+  .cols7 { position: absolute; inset: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 1.1rem; }
+  .c7 { display: flex; flex-direction: column; height: 100%; text-align: center; }
+  .c7-track { flex: 1; position: relative; }
+  .c7-b { position: absolute; left: 14%; right: 14%; bottom: 0; border-radius: 8px 8px 2px 2px; min-height: 2px; background-image: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 70%); transition: height .6s cubic-bezier(.2,.7,.2,1); }
+  .c7-v { position: absolute; left: 0; right: 0; font-size: 1.3rem; font-weight: 700; z-index: 1; font-variant-numeric: tabular-nums; }
+  .c7-v span { background: var(--surface); padding: 0 0.3rem; border-radius: 4px; }
+  .c7-t { position: absolute; left: -0.55rem; right: -0.55rem; border-top: 2px dashed var(--axis); }
+  .c7-d { font-size: 1rem; color: var(--muted); padding-top: 0.55rem; border-top: 1px solid var(--axis); font-weight: 500; }
+  .c7.today .c7-d { color: var(--ink); font-weight: 700; }
+  .chart-fill { flex: 1; min-height: 8rem; display: flex; }
+  .note { color: var(--muted); font-size: 0.95rem; margin-top: 0.9rem; display: flex; align-items: center; gap: 0.5rem; }
+  .note .dash { width: 1.6rem; border-top: 2px dashed var(--axis); }
+</style>
+</head>
+<body>
+<div class="tv">
+  <header class="tv-header" id="hdr"></header>
+  <main class="tv-main"><div class="stage" id="stage"></div></main>
+  <div class="slidebar"><span class="lbl" id="slbl"></span><div class="progress" id="dots"></div></div>
+</div>
+<script src="assets/seed-data.js"></script>
+<script src="assets/core.js"></script>
+<script>
+const { CFG, esc, fmtFull, ICONS } = KPI;
+const qs = new URLSearchParams(location.search);
+const SECS = Number(qs.get("interval")) || CFG.SLIDE_SECONDS;
+KPI.mountHeader(document.getElementById("hdr"), "Team Performance", "tv-slides.html");
+
+let slides = [];
+let idx = 0;
+let startedAt = Date.now();
+const pct = (v) => (v == null ? "–" : Math.round(v) + "%");
+const barW = (v, max = 150) => (v == null ? 0 : Math.min(v, max) / max * 100);
+
+function overview(people, data, day) {
+  const withData = people.filter((p) => p.today.score != null);
+  const avg = withData.length ? withData.reduce((a, p) => a + p.today.score, 0) / withData.length : null;
+  const onT = withData.filter((p) => p.today.score >= CFG.THRESHOLDS.good).length;
+  const weekPeople = people.filter((p) => p.weekAvg != null);
+  const weekAvg = weekPeople.length ? weekPeople.reduce((a, p) => a + p.weekAvg, 0) / weekPeople.length : null;
+  const st = KPI.status(avg), wst = KPI.status(weekAvg);
+  const top = [...withData].sort((a, b) => b.today.score - a.today.score).slice(0, 6);
+  const depts = KPI.deptNames().map((name) => {
+    const ps = withData.filter((p) => p.department === name);
+    return { name, avg: ps.length ? ps.reduce((a, p) => a + p.today.score, 0) / ps.length : null };
+  });
+  const onPct = withData.length ? onT / withData.length * 100 : 0;
+  const entPct = people.length ? withData.length / people.length * 100 : 0;
+  return `<div class="slide ov">
+    <div class="kpis">
+      <div class="card kpi"><div class="kpi-l">Team average today ${KPI.pill(avg)}</div><div class="kpi-v st-${st.key}">${pct(avg)}</div>
+        <div class="bar"><span class="bg-${st.key}" style="width:${barW(avg)}%"></span><i class="tgt" style="left:66.67%"></i></div></div>
+      <div class="card kpi"><div class="kpi-l">On target today</div><div class="kpi-v">${onT}<span> / ${withData.length}</span></div>
+        <div class="bar"><span class="bg-good" style="width:${onPct}%"></span></div><div class="kpi-s">people at ≥ ${CFG.THRESHOLDS.good}% of target</div></div>
+      <div class="card kpi"><div class="kpi-l">Output logged</div><div class="kpi-v">${withData.length}<span> / ${people.length}</span></div>
+        <div class="bar"><span style="width:${entPct}%;background:var(--accent)"></span></div><div class="kpi-s">team members with entries</div></div>
+      <div class="card kpi"><div class="kpi-l">7-day team average ${KPI.pill(weekAvg)}</div><div class="kpi-v st-${wst.key}">${pct(weekAvg)}</div>
+        <div class="bar"><span class="bg-${wst.key}" style="width:${barW(weekAvg)}%"></span><i class="tgt" style="left:66.67%"></i></div></div>
+    </div>
+    <div class="card panel"><div class="card-h"><h2 class="card-title">Departments today</h2><span class="card-sub">tick = 100% of target</span></div>
+      <div class="lb">${depts.map((d) => {
+        const s = KPI.status(d.avg);
+        return `<div class="dept-row"><div><span class="dept-dot" style="background:${KPI.deptColor(d.name)}"></span>${esc(d.name)}</div>
+          <div class="bar"><span class="bg-${s.key}" style="width:${barW(d.avg)}%"></span><i class="tgt" style="left:66.67%"></i></div>
+          <div class="v st st-${s.key}" style="justify-content:flex-end">${pct(d.avg)}</div></div>`;
+      }).join("")}</div></div>
+    <div class="card panel"><div class="card-h"><h2 class="card-title">Team trend</h2><span class="card-sub">average score · last 20 working days</span></div>
+      <div class="chart-fill">${KPI.trendChart(KPI.teamSeries(data, day, 20), { values: "last", xLabels: 5 })}</div></div>
+    <div class="card panel"><div class="card-h"><h2 class="card-title" style="display:flex;align-items:center;gap:.5rem">${ICONS.trophy} Top performers today</h2><span class="card-sub">% of daily target</span></div>
+      <div class="lb">${top.length ? top.map((p, i) => {
+        const s = KPI.status(p.today.score);
+        return `<div class="lb-row"><div class="lb-rank ${i === 0 ? "r1" : ""}">${i + 1}</div>${KPI.avatar(p, { size: "3.4rem", ring: s.key })}
+          <div class="lb-name">${esc(p.name)}<small><span class="dept-dot" style="background:${KPI.deptColor(p.department)}"></span>${esc(p.department)}</small></div>
+          <div class="lb-val st-${s.key}">${pct(p.today.score)}</div></div>`;
+      }).join("") : '<div class="empty">No entries yet for this day</div>'}</div></div>
+  </div>`;
+}
+
+function person(p, day, data) {
+  const st = KPI.status(p.today.score);
+  const color = KPI.deptColor(p.department);
+  const tasks = p.today.tasks.length ? p.today.tasks.map((t) => {
+    const s = KPI.status(t.pct);
+    return `<div><div class="task-h"><span>${esc(t.task)}</span><span><b>${fmtFull(t.qty)}</b> <span class="of">/ ${fmtFull(t.target)}</span>&nbsp; ${KPI.pill(t.pct, t.pct == null ? "no target" : Math.round(t.pct) + "%")}</span></div>
+      <div class="bar"><span class="bg-${s.key}" style="width:${barW(t.pct)}%"></span><i class="tgt" style="left:66.67%"></i></div></div>`;
+  }).join("") : `<div class="empty" style="text-align:left;padding:1rem 0">No output recorded for this day yet.</div>`;
+  const max = Math.max(CFG.THRESHOLDS.good * 1.3, ...p.trend.map((t) => (t.score || 0) * 1.18));
+  const tpos = CFG.THRESHOLDS.good / max * 100;
+  const cols = p.trend.map((t) => {
+    const s = KPI.status(t.score);
+    const h = t.score == null ? 0 : t.score / max * 100;
+    return `<div class="c7 ${t.day === day ? "today" : ""}"><div class="c7-track">
+      <div class="c7-t" style="bottom:${tpos}%"></div>
+      <div class="c7-b bg-${s.key}" style="height:${h}%"></div>
+      <div class="c7-v st-${s.key}" style="bottom:calc(${h}% + 0.35rem)"><span>${pct(t.score)}</span></div></div>
+      <div class="c7-d">${esc(KPI.fmtDate(t.day, { weekday: "short", day: "numeric" }))}</div></div>`;
+  }).join("");
+  const best = p.trend.reduce((m, t) => (t.score != null && (m == null || t.score > m) ? t.score : m), null);
+  return `<div class="slide ps">
+    <div class="card ps-head" style="--dc:${color}">
+      ${KPI.avatar(p, { cls: "xl", ring: st.key })}
+      <div><div class="ps-name">${esc(p.name)}</div><div class="ps-dept"><span class="dept-dot" style="background:${color}"></span>${esc(p.department)}</div></div>
+      <div class="ps-mini"><div>7-day avg<b>${pct(p.weekAvg)}</b></div><div>Best day<b>${pct(best)}</b></div><div>Days worked<b>${p.daysWorked}</b></div></div>
+      <div class="ps-score"><div class="big st-${st.key}">${pct(p.today.score)}</div>${KPI.pill(p.today.score, p.today.score == null ? "No entry yet" : st.label + " · of daily target")}</div>
+    </div>
+    <div class="card panel"><div class="card-h"><h2 class="card-title">Today's output</h2><span class="card-sub">quantity / daily target</span></div><div class="tasks">${tasks}</div>
+      <div class="card-h" style="margin-top:1.6rem"><h2 class="card-title">Trend</h2><span class="card-sub">last 20 working days</span></div>
+      <div class="chart-fill">${KPI.trendChart(KPI.empSeries(data, p.name, day, 20), { values: "last", xLabels: 5, color: KPI.deptColor(p.department) })}</div></div>
+    <div class="card panel"><div class="card-h"><h2 class="card-title">Last 7 working days</h2><span class="card-sub">score per day</span></div>
+      <div class="chart-area"><div class="cols7">${cols}</div></div>
+      <div class="note"><span class="dash"></span>Daily target (100%) · score = output ÷ target, added up across all tasks that day</div></div>
+  </div>`;
+}
+
+function render(data) {
+  const day = KPI.displayDay(data);
+  KPI.setHeaderDay(day);
+  const people = KPI.summaries(data, day);
+  const names = KPI.deptNames();
+  const deptIdx = (d) => { const i = names.indexOf(d); return i < 0 ? 99 : i; };
+  people.sort((a, b) => deptIdx(a.department) - deptIdx(b.department) || a.name.localeCompare(b.name));
+  const curKey = slides[idx]?.key;
+  slides = [{ key: "__overview", title: "Team overview", html: overview(people, data, day) }, ...people.map((p) => ({ key: p.name, title: p.name, html: person(p, day, data) }))];
+  const keep = slides.findIndex((s) => s.key === curKey);
+  idx = keep >= 0 ? keep : 0;
+  const stage = document.getElementById("stage");
+  stage.innerHTML = slides.map((s) => s.html).join("");
+  stage.children[idx]?.classList.add("on");
+  drawDots();
+}
+
+function drawDots() {
+  document.getElementById("dots").innerHTML = slides.map((_, i) => `<i class="${i === idx ? "on" : i < idx ? "done" : ""}">${i === idx ? '<b id="pbar"></b>' : ""}</i>`).join("");
+  document.getElementById("slbl").textContent = `${idx + 1} / ${slides.length} · ${slides[idx]?.title || ""}`;
+}
+
+function go(n) {
+  const stage = document.getElementById("stage");
+  stage.children[idx]?.classList.remove("on");
+  idx = (n + slides.length) % slides.length;
+  stage.children[idx]?.classList.add("on");
+  drawDots();
+  startedAt = Date.now();
+}
+
+setInterval(() => {
+  const el = (Date.now() - startedAt) / 1000;
+  const b = document.getElementById("pbar"); if (b) b.style.width = Math.min(100, el / SECS * 100) + "%";
+  if (el >= SECS && slides.length) go(idx + 1);
+}, 150);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight") go(idx + 1);
+  if (e.key === "ArrowLeft") go(idx - 1);
+});
+
+KPI.autoRefresh(render);
+</script>
+</body>
+</html>

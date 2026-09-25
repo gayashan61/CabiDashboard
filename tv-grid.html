@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Team Grid · Production KPI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/config.js"></script>
+<script src="assets/theme.js"></script>
+<style>
+  .grid { display: grid; gap: 1rem; height: 100%; }
+  .tile { position: relative; padding: 1rem 1.15rem 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; min-height: 0; overflow: hidden; }
+  .tile::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--st-fill); }
+  .tile.good { --st-fill: var(--good); } .tile.warning { --st-fill: var(--warning); } .tile.critical { --st-fill: var(--critical); } .tile.none { --st-fill: var(--none); }
+  .tile-top { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+  .tile-id { min-width: 0; flex: 1; }
+  .tile-name { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile-dept { font-size: 0.82rem; color: var(--muted); white-space: nowrap; display: flex; align-items: center; font-weight: 500; margin-top: 0.1rem; }
+  .tile-mid { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+  .tile-score { font-size: 2.7rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  .tile.none .tile-score { font-size: 1.6rem; font-weight: 600; letter-spacing: 0; color: var(--muted); }
+  .tile-bar .bar { height: 0.45rem; }
+  .tile-tasks { font-size: 0.86rem; color: var(--ink-2); display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.2rem; }
+  .tile-tasks div { display: flex; justify-content: space-between; gap: 0.5rem; white-space: nowrap; }
+  .tile-tasks div > span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .tile-tasks b { flex: 0 0 auto; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tile-tasks b i { font-style: normal; color: var(--muted); font-weight: 400; }
+  .tile-foot { margin-top: auto; display: grid; grid-template-columns: 1fr auto; gap: 0.9rem; align-items: end; padding-top: 0.55rem; border-top: 1px solid var(--grid); }
+  .tile-spark { height: 3rem; }
+  .tile-avg { text-align: right; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .tile-avg b { display: block; font-size: 1.15rem; color: var(--ink); letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="tv">
+  <header class="tv-header" id="hdr"></header>
+  <main class="tv-main"><div class="grid" id="grid"></div></main>
+  <footer class="tv-footer" id="legend"></footer>
+</div>
+<script src="assets/seed-data.js"></script>
+<script src="assets/core.js"></script>
+<script>
+const { CFG, esc, fmtNum } = KPI;
+KPI.mountHeader(document.getElementById("hdr"), "Team Performance", "tv-grid.html");
+document.getElementById("legend").innerHTML =
+  `${KPI.pill(CFG.THRESHOLDS.good, `On target ≥ ${CFG.THRESHOLDS.good}%`)}
+   ${KPI.pill(CFG.THRESHOLDS.warning, `Close ${CFG.THRESHOLDS.warning}–${CFG.THRESHOLDS.good - 1}%`)}
+   ${KPI.pill(0, `Below ${CFG.THRESHOLDS.warning}%`)}
+   <span class="legend-item">Score = output ÷ daily target, summed across tasks · trend line = last 14 working days</span>`;
+
+const deptOrder = (d) => { const i = KPI.deptNames().indexOf(d); return i < 0 ? 99 : i; };
+const MAX = 150;
+
+KPI.autoRefresh((data) => {
+  const day = KPI.displayDay(data);
+  KPI.setHeaderDay(day);
+  const people = KPI.summaries(data, day).sort((a, b) => deptOrder(a.department) - deptOrder(b.department) || a.name.localeCompare(b.name));
+  const n = people.length;
+  const cols = n <= 8 ? 4 : n <= 15 ? 5 : n <= 18 ? 6 : n <= 28 ? 7 : 8;
+  const grid = document.getElementById("grid");
+  grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+  grid.style.gridTemplateRows = `repeat(${Math.ceil(n / cols)}, minmax(0, 1fr))`;
+  if (!n) { grid.innerHTML = '<div class="empty">No employees yet — add them from the Admin page.</div>'; return; }
+  grid.innerHTML = people.map((p) => {
+    const st = KPI.status(p.today.score);
+    const has = p.today.score != null;
+    const w = has ? Math.min(p.today.score, MAX) / MAX * 100 : 0;
+    const tasks = p.today.tasks.slice(0, 3).map((t) =>
+      `<div><span>${esc(t.task)}</span><b>${fmtNum(t.qty)}<i> / ${fmtNum(t.target)}</i></b></div>`).join("");
+    return `<div class="card tile ${st.key}">
+      <div class="tile-top">${KPI.avatar(p, { cls: "lg", ring: st.key })}<div class="tile-id"><div class="tile-name">${esc(p.name)}</div><div class="tile-dept"><span class="dept-dot" style="background:${KPI.deptColor(p.department)}"></span>${esc(p.department)}</div></div></div>
+      <div class="tile-mid"><div class="tile-score ${has ? "st-" + st.key : ""}">${has ? Math.round(p.today.score) + "%" : "No entry yet"}</div>${has ? KPI.pill(p.today.score) : ""}</div>
+      ${has ? `<div class="tile-bar"><div class="bar"><span class="bg-${st.key}" style="width:${w}%"></span><i class="tgt" style="left:${100 / MAX * 100}%"></i></div></div>` : ""}
+      <div class="tile-tasks">${tasks}</div>
+      <div class="tile-foot"><div class="tile-spark">${KPI.trendChart(KPI.empSeries(data, p.name, day, 14), { mini: true })}</div>
+        <div class="tile-avg">7-day avg<b>${p.weekAvg == null ? "–" : Math.round(p.weekAvg) + "%"}</b></div></div>
+    </div>`;
+  }).join("");
+});
+</script>
+</body>
+</html>

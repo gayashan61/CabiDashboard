@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Admin · Production KPI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/config.js"></script>
+<script src="assets/theme.js"></script>
+<style>
+  html { font-size: 15px; }
+  body { font-size: 14px; }
+  .appbar { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--border); box-shadow: var(--shadow); }
+  .appbar-in { max-width: 1240px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 14px; }
+  .appbar .brand-mark { width: 36px; height: 36px; border-radius: 10px; }
+  .appbar .brand-mark svg { width: 20px; height: 20px; }
+  .appbar .brand-title { font-size: 17px; }
+  .appbar .brand-eyebrow { font-size: 11px; }
+  .appbar .sp { flex: 1; }
+  .appbar .icon-btn { width: 36px; height: 36px; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 20px; }
+  .page-h { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 6px 0 18px; flex-wrap: wrap; }
+  .page-h h1 { font-size: 24px; margin: 0; letter-spacing: -0.02em; }
+  .page-h p { margin: 4px 0 0; color: var(--muted); }
+  .tabs { display: inline-flex; gap: 2px; padding: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 18px; overflow-x: auto; max-width: 100%; }
+  .tabs button { background: none; border: 0; color: var(--ink-2); padding: 8px 16px; font: inherit; font-weight: 500; cursor: pointer; border-radius: 7px; white-space: nowrap; }
+  .tabs button:hover { color: var(--ink); }
+  .tabs button.on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--shadow); }
+  input, select { background: var(--surface); color: var(--ink); border: 1px solid var(--axis); border-radius: 8px; padding: 8px 10px; font: inherit; transition: border-color .15s, box-shadow .15s; }
+  input:hover, select:hover { border-color: var(--muted); }
+  input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  input.num { width: 100%; text-align: right; font-variant-numeric: tabular-nums; }
+  input.changed { border-color: var(--warning); background: var(--warning-soft); }
+  input.bad { border-color: var(--critical); background: var(--critical-soft); }
+  .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .toolbar .sp { flex: 1; }
+  .toolbar .datebig { font-weight: 600; font-size: 15px; margin-left: 6px; }
+  .hint { color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .dept-h { margin: 24px 0 10px; font-size: 12px; color: var(--muted); display: flex; align-items: center; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .dept-h::after { content: ""; flex: 1; height: 1px; background: var(--border); margin-left: 12px; }
+  .emp { display: grid; grid-template-columns: 180px 1fr 120px; gap: 16px; align-items: center; padding: 12px 16px; margin-bottom: 8px; transition: border-color .15s; }
+  .emp:focus-within { border-color: var(--accent); }
+  .emp-name { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+  .emp-av { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; color: #fff; font-size: 14px; flex: 0 0 auto; }
+  .emp-tasks { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .emp-tasks label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+  .emp-tasks label span { color: var(--muted); font-weight: 400; }
+  .emp-score { text-align: right; font-size: 20px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .emp-score .pill { font-size: 11px; }
+  .savebar { position: sticky; bottom: 0; background: color-mix(in srgb, var(--page) 88%, transparent); backdrop-filter: blur(8px); border-top: 1px solid var(--border); padding: 12px 0; display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+  .tcard { padding: 0; overflow: hidden; }
+  table.t { width: 100%; border-collapse: collapse; }
+  table.t th, table.t td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--grid); vertical-align: middle; }
+  table.t tr:last-child td { border-bottom: 0; }
+  table.t th { color: var(--muted); font-weight: 600; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; background: var(--surface-2); }
+  table.t tbody tr:hover { background: color-mix(in srgb, var(--surface-2) 60%, transparent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; cursor: pointer; user-select: none; color: var(--muted); background: var(--surface); font-weight: 500; }
+  .chip:hover { border-color: var(--axis); color: var(--ink-2); }
+  .chip input { display: none; }
+  .chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+  .ph { display: flex; align-items: center; gap: 10px; }
+  .ph-av { position: relative; cursor: pointer; display: inline-block; border-radius: 50%; }
+  .ph-av input, .linkbtn input { display: none; }
+  .ph-cam { position: absolute; right: -4px; bottom: -4px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--surface); }
+  .ph-cam svg { width: 12px; height: 12px; }
+  .ph-av:hover .av { filter: brightness(0.92); }
+  .ph-act { display: flex; flex-direction: column; gap: 2px; }
+  .linkbtn { background: none; border: 0; padding: 0; font: inherit; font-size: 12px; font-weight: 600; color: var(--accent-ink); cursor: pointer; text-align: left; }
+  .linkbtn:hover { text-decoration: underline; }
+  .linkbtn.danger { color: var(--critical-ink); }
+  .login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 20px; position: relative; }
+  .login-wrap .theme-toggle { position: absolute; top: 16px; right: 16px; }
+  .login { width: 100%; max-width: 380px; padding: 32px; box-shadow: var(--shadow-lg); }
+  .login .brand-mark { width: 44px; height: 44px; border-radius: 12px; margin-bottom: 18px; }
+  .login h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: -0.02em; }
+  .login label { display: block; font-size: 13px; font-weight: 600; margin: 20px 0 6px; color: var(--ink-2); }
+  .login input { width: 100%; padding: 11px 12px; }
+  .login button { width: 100%; padding: 11px; margin-top: 8px; }
+  .err { color: var(--critical-ink); min-height: 1.4em; font-size: 13px; margin-top: 8px; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 8px); background: var(--ink); color: var(--page); padding: 11px 18px; border-radius: 10px; font-weight: 600; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; z-index: 9; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 8px; }
+  .toast::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+  .toast.error::before { background: var(--critical); }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .demo-note { background: var(--warning-soft); border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent); color: var(--ink); padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; font-size: 13px; line-height: 1.5; }
+  .demo-note code { background: var(--surface); padding: 1px 5px; border-radius: 4px; }
+  @media (max-width: 720px) {
+    .emp { grid-template-columns: 1fr auto; }
+    .emp-tasks { grid-column: 1 / -1; grid-row: 2; grid-template-columns: repeat(2, 1fr); }
+    .appbar .hide-sm { display: none; }
+    .appbar .brand-eyebrow { display: none; }
+    .tcard { overflow: visible; }
+    table.t { display: block; }
+    table.t thead { display: none; }
+    table.t tbody { display: block; }
+    table.t tr { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px; border-bottom: 1px solid var(--grid); }
+    table.t td { display: block; padding: 0; border: 0; }
+    table.emp-table td:nth-child(1), table.emp-table td:nth-child(4) { grid-column: 1 / -1; }
+    table.t input.nm, table.t select { width: 100% !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+<script src="assets/seed-data.js"></script>
+<script src="assets/core.js"></script>
+<script>
+const { CFG, esc, fmtNum } = KPI;
+const app = document.getElementById("app");
+let PW = null; try { PW = sessionStorage.getItem("kpi_pw"); } catch (e) {}
+let data = null;
+let tab = "entry";
+let entryDay = KPI.todayKey();
+let deptFilter = "";
+let dirty = false;
+
+function toast(msg, error) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.className = "toast show" + (error ? " error" : "");
+  clearTimeout(t._h); t._h = setTimeout(() => (t.className = "toast"), 2600);
+}
+window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+const themeBtn = () => `<button class="icon-btn theme-toggle" id="theme-btn" title="Switch light / dark theme" aria-label="Switch light or dark theme">${KPI.ICONS.moon}${KPI.ICONS.sun}</button>`;
+const bindTheme = () => { const b = document.getElementById("theme-btn"); if (b) b.onclick = () => KPITheme.toggle(); };
+
+// ───────── login ─────────
+function showLogin(err = "") {
+  app.innerHTML = `<div class="login-wrap">${themeBtn()}<form class="card login" id="lf">
+    <div class="brand-mark">${KPI.ICONS.logo}</div>
+    <h1>Sign in to Admin</h1><div class="hint">${esc(CFG.COMPANY_NAME)}${KPI.DEMO ? " · demo mode — password is <b>admin</b>" : ""}</div>
+    <label for="pw">Password</label>
+    <input type="password" id="pw" placeholder="Enter admin password" autocomplete="current-password" autofocus>
+    <div class="err" id="err">${esc(err)}</div>
+    <button class="btn primary" type="submit">Sign in</button></form></div>`;
+  bindTheme();
+  document.getElementById("lf").onsubmit = async (e) => {
+    e.preventDefault();
+    const pw = document.getElementById("pw").value;
+    document.getElementById("err").textContent = "Checking…";
+    try { await KPI.auth(pw); PW = pw; try { sessionStorage.setItem("kpi_pw", pw); } catch (e) {} await boot(); }
+    catch (ex) { document.getElementById("err").textContent = ex.message; }
+  };
+}
+function logout() { try { sessionStorage.removeItem("kpi_pw"); } catch (e) {} PW = null; showLogin(); }
+
+async function boot() {
+  app.innerHTML = `<div class="wrap"><p class="hint">Loading…</p></div>`;
+  try { data = await KPI.load(120); } catch (e) { app.innerHTML = `<div class="wrap"><p class="err">Could not load data: ${esc(e.message)}</p><p class="hint">Check API_URL in assets/config.js and that the Apps Script is deployed with access “Anyone”.</p></div>`; return; }
+  shell();
+}
+
+function shell() {
+  app.innerHTML = `
+    <div class="appbar"><div class="appbar-in">
+      <div class="brand"><div class="brand-mark">${KPI.ICONS.logo}</div><div class="brand-text"><div class="brand-eyebrow">${esc(CFG.COMPANY_NAME)}</div><div class="brand-title">Admin console</div></div></div>
+      ${KPI.DEMO ? '<span class="demo-badge">DEMO MODE</span>' : ""}<span class="sp"></span>
+      <a class="btn hide-sm" href="index.html" target="_blank">${KPI.ICONS.external} TV screens</a>
+      ${themeBtn()}
+      <button class="icon-btn" id="lo" title="Log out" aria-label="Log out">${KPI.ICONS.logout}</button>
+    </div></div>
+    <div class="wrap">
+    ${KPI.DEMO ? `<div class="demo-note"><b>Demo mode</b> — data is saved only in this browser. Set <b>API_URL</b> in <code>assets/config.js</code> to connect the Google Sheet so the TV and everyone else see your entries.</div>` : ""}
+    <div class="page-h"><div><h1>Production data</h1><p>Record daily output, maintain targets and manage the team.</p></div></div>
+    <nav class="tabs">
+      <button data-t="entry">Daily entry</button><button data-t="targets">Targets</button><button data-t="employees">Employees</button>${KPI.DEMO ? '<button data-t="demo">Demo tools</button>' : ""}
+    </nav>
+    <div id="view"></div></div>`;
+  document.getElementById("lo").onclick = logout;
+  bindTheme();
+  app.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+    if (dirty && !confirm("You have unsaved changes. Leave this tab?")) return;
+    dirty = false; tab = b.dataset.t; renderTab();
+  });
+  renderTab();
+}
+function renderTab() {
+  app.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.t === tab));
+  ({ entry: viewEntry, targets: viewTargets, employees: viewEmployees, demo: viewDemo })[tab]();
+}
+
+// ───────── daily entry ─────────
+function viewEntry() {
+  const v = document.getElementById("view");
+  const depts = [...new Set([...CFG.DEPARTMENTS.map((d) => d.name), ...data.employees.map((e) => e.department)])];
+  const emps = data.employees.filter((e) => e.active && (!deptFilter || e.department === deptFilter));
+  v.innerHTML = `
+    <div class="toolbar">
+      <button class="btn" id="prev" title="Previous day">◀</button>
+      <input type="date" id="day" value="${entryDay}">
+      <button class="btn" id="next" title="Next day">▶</button>
+      <button class="btn" id="today">Today</button>
+      <span class="datebig">${esc(KPI.fmtDate(entryDay, { weekday: "long", day: "numeric", month: "long", year: "numeric" }))}</span>
+      <span class="sp"></span>
+      <select id="dept"><option value="">All departments</option>${depts.map((d) => `<option ${d === deptFilter ? "selected" : ""}>${esc(d)}</option>`).join("")}</select>
+    </div>
+    <p class="hint">Type the quantity produced. You can type sums like <b>150+50</b>. Leave blank or 0 for none. The grey number is the daily target.</p>
+    <div id="emps">${depts.filter((d) => emps.some((e) => e.department === d)).map((d) => `
+      <div class="dept-h"><span class="dept-dot" style="background:${KPI.deptColor(d)}"></span>${esc(d)}</div>
+      ${emps.filter((e) => e.department === d).map((e) => {
+        const cur = data.byKey[entryDay + "|" + e.name] || {};
+        const extra = Object.keys(cur).filter((t) => !e.tasks.includes(t));
+        return `<div class="card emp" data-emp="${esc(e.name)}">
+          <div class="emp-name">${KPI.avatar(e, { size: "36px" })}${esc(e.name)}</div>
+          <div class="emp-tasks">${[...e.tasks, ...extra].map((t) => `
+            <div><label title="${esc(t)}">${esc(t)} <span>/ ${fmtNum(data.targets[t])}</span></label>
+            <input class="num" inputmode="decimal" data-task="${esc(t)}" data-orig="${cur[t] ?? ""}" value="${cur[t] ?? ""}"></div>`).join("")}
+          </div>
+          <div class="emp-score"></div></div>`;
+      }).join("")}`).join("") || '<p class="hint">No active employees. Add them in the Employees tab.</p>'}</div>
+    <div class="savebar"><button class="btn primary" id="save" disabled>Save changes</button><span class="hint" id="chg">No changes</span></div>`;
+
+  const setDay = (d) => { if (dirty && !confirm("Discard unsaved changes?")) return; dirty = false; entryDay = d; viewEntry(); };
+  document.getElementById("day").onchange = (e) => e.target.value && setDay(e.target.value);
+  document.getElementById("prev").onclick = () => setDay(KPI.addDays(entryDay, -1));
+  document.getElementById("next").onclick = () => setDay(KPI.addDays(entryDay, 1));
+  document.getElementById("today").onclick = () => setDay(KPI.todayKey());
+  document.getElementById("dept").onchange = (e) => { if (dirty && !confirm("Discard unsaved changes?")) { e.target.value = deptFilter; return; } dirty = false; deptFilter = e.target.value; viewEntry(); };
+
+  const refreshRow = (row) => {
+    let score = 0, any = false;
+    row.querySelectorAll("input").forEach((i) => {
+      const q = KPI.parseQty(i.value);
+      i.classList.toggle("bad", Number.isNaN(q));
+      const orig = i.dataset.orig === "" ? null : Number(i.dataset.orig);
+      i.classList.toggle("changed", !Number.isNaN(q) && (q || null) !== (orig || null));
+      const t = data.targets[i.dataset.task];
+      if (q && t) { score += q / t * 100; any = true; }
+    });
+    const st = KPI.status(any ? score : null);
+    row.querySelector(".emp-score").innerHTML = `<span class="st st-${st.key}">${any ? Math.round(score) + "%" : "–"}</span>${KPI.pill(any ? score : null)}`;
+  };
+  const refreshAll = () => {
+    document.querySelectorAll(".emp").forEach(refreshRow);
+    const n = document.querySelectorAll("input.changed").length, bad = document.querySelectorAll("input.bad").length;
+    dirty = n > 0;
+    document.getElementById("save").disabled = !n || bad;
+    document.getElementById("chg").textContent = bad ? `${bad} invalid value(s) — use numbers only` : n ? `${n} unsaved change(s)` : "No changes";
+  };
+  document.getElementById("emps").addEventListener("input", refreshAll);
+  document.getElementById("emps").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.target.matches("input")) {
+      const all = [...document.querySelectorAll("#emps input")]; const i = all.indexOf(e.target);
+      all[i + 1]?.focus(); all[i + 1]?.select(); e.preventDefault();
+    }
+  });
+  refreshAll();
+
+  const save = async () => {
+    const rows = [...document.querySelectorAll("input.changed")].map((i) => ({
+      employee: i.closest(".emp").dataset.emp, task: i.dataset.task, qty: KPI.parseQty(i.value) || null,
+    }));
+    if (!rows.length) return;
+    const btn = document.getElementById("save"); btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      await KPI.saveEntries(PW, entryDay, rows);
+      data = await KPI.load(120); dirty = false;
+      toast(`Saved ${rows.length} value(s) for ${KPI.fmtDate(entryDay)}`); viewEntry();
+    } catch (e) { toast("Save failed: " + e.message, true); btn.disabled = false; btn.textContent = "Save changes"; if (/password/i.test(e.message)) logout(); }
+  };
+  document.getElementById("save").onclick = save;
+  document.onkeydown = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "s" && tab === "entry") { e.preventDefault(); save(); } };
+}
+
+// ───────── targets ─────────
+function allTasks() {
+  const s = new Set(Object.keys(data.targets));
+  data.employees.forEach((e) => e.tasks.forEach((t) => s.add(t)));
+  return [...s];
+}
+function viewTargets() {
+  const v = document.getElementById("view");
+  const tasks = allTasks();
+  const usedBy = (t) => data.employees.filter((e) => e.tasks.includes(t)).map((e) => e.name);
+  v.innerHTML = `<p class="hint">The daily target is what one person should produce in a full day working only on that task. Scores on the TV are output ÷ target.</p>
+    <div class="card tcard"><table class="t"><thead><tr><th>Task</th><th style="width:160px">Daily target</th><th>Used by</th><th></th></tr></thead>
+    <tbody id="tb">${tasks.map((t) => row(t, data.targets[t] ?? "", usedBy(t))).join("")}</tbody></table></div>
+    <div class="toolbar" style="margin-top:12px"><input id="newtask" placeholder="New task name"><button class="btn" id="add">+ Add task</button></div>
+    <div class="savebar"><button class="btn primary" id="save">Save targets</button></div>`;
+  function row(t, val, users = []) {
+    return `<tr data-task="${esc(t)}"><td><b>${esc(t)}</b></td><td><input class="num" value="${val}" inputmode="decimal"></td>
+      <td class="hint">${esc(users.join(", ")) || "—"}</td><td>${users.length ? "" : '<button class="btn danger del">Remove</button>'}</td></tr>`;
+  }
+  const tb = document.getElementById("tb");
+  tb.addEventListener("input", () => (dirty = true));
+  tb.addEventListener("click", (e) => { if (e.target.classList.contains("del")) { e.target.closest("tr").remove(); dirty = true; } });
+  document.getElementById("add").onclick = () => {
+    const n = document.getElementById("newtask").value.trim();
+    if (!n || tb.querySelector(`tr[data-task="${CSS.escape(n)}"]`)) return;
+    tb.insertAdjacentHTML("beforeend", row(n, "", [])); document.getElementById("newtask").value = ""; dirty = true;
+  };
+  document.getElementById("save").onclick = async () => {
+    const targets = {};
+    for (const tr of tb.querySelectorAll("tr")) {
+      const q = KPI.parseQty(tr.querySelector("input").value);
+      if (Number.isNaN(q)) { toast(`Invalid target for ${tr.dataset.task}`, true); return; }
+      if (q) targets[tr.dataset.task] = q;
+    }
+    try { await KPI.saveTargets(PW, targets); data = await KPI.load(120); dirty = false; toast("Targets saved"); viewTargets(); }
+    catch (e) { toast("Save failed: " + e.message, true); }
+  };
+}
+
+// ───────── employees ─────────
+function viewEmployees() {
+  const v = document.getElementById("view");
+  const tasks = allTasks();
+  const depts = [...new Set([...CFG.DEPARTMENTS.map((d) => d.name), ...data.employees.map((e) => e.department)])];
+  const photos = new WeakMap(); // <tr> -> photo data URL
+  const row = (e) => `<tr data-orig="${esc(e.name)}" data-dept="${esc(e.department)}">
+    <td><div class="ph">
+      <label class="ph-av" title="Upload photo">${KPI.avatar(e, { size: "48px" })}<span class="ph-cam">${KPI.ICONS.camera}</span><input type="file" accept="image/*" class="ph-in"></label>
+      <div class="ph-act"><label class="linkbtn">Upload<input type="file" accept="image/*" class="ph-in"></label><button type="button" class="linkbtn danger ph-rm" ${e.photo ? "" : "hidden"}>Remove</button></div>
+    </div></td>
+    <td><input class="nm" value="${esc(e.name)}" style="width:140px"></td>
+    <td><select class="dp">${depts.map((d) => `<option ${d === e.department ? "selected" : ""}>${esc(d)}</option>`).join("")}</select></td>
+    <td><div class="chips">${tasks.map((t) => `<label class="chip ${e.tasks.includes(t) ? "on" : ""}"><input type="checkbox" value="${esc(t)}" ${e.tasks.includes(t) ? "checked" : ""}>${esc(t)}</label>`).join("")}</div></td>
+    <td><label class="hint"><input type="checkbox" class="ac" ${e.active ? "checked" : ""}> Show</label></td></tr>`;
+  v.innerHTML = `<p class="hint">Click a picture (or <b>Upload</b>) to add a profile photo — it is cropped to a square and compressed automatically. Tick the tasks each person does — only those appear in Daily entry. Untick <b>Show</b> to hide someone from the TV without deleting their history. Renaming keeps past entries linked.</p>
+    <div class="card tcard"><table class="t emp-table"><thead><tr><th>Photo</th><th>Name</th><th>Department</th><th>Tasks</th><th>TV</th></tr></thead><tbody id="tb">${data.employees.map(row).join("")}</tbody></table></div>
+    <div class="toolbar" style="margin-top:12px"><button class="btn" id="add">+ Add employee</button><span class="hint">New departments/tasks: add tasks in the Targets tab; departments are set in assets/config.js.</span></div>
+    <div class="savebar"><button class="btn primary" id="save">Save employees</button></div>`;
+  const tb = document.getElementById("tb");
+  tb.querySelectorAll("tr").forEach((tr, i) => photos.set(tr, data.employees[i]?.photo || ""));
+  const paintAvatar = (tr) => {
+    const name = tr.querySelector(".nm").value.trim() || "?";
+    const tmp = { name, department: tr.querySelector(".dp").value, photo: photos.get(tr) || "" };
+    tr.querySelector(".ph-av .av").outerHTML = KPI.avatar(tmp, { size: "48px" });
+    tr.querySelector(".ph-rm").hidden = !tmp.photo;
+  };
+  tb.addEventListener("change", async (e) => {
+    dirty = true;
+    if (e.target.closest(".chip")) e.target.closest(".chip").classList.toggle("on", e.target.checked);
+    const tr = e.target.closest("tr");
+    if (e.target.classList.contains("ph-in") && e.target.files[0]) {
+      try { photos.set(tr, await KPI.resizePhoto(e.target.files[0])); paintAvatar(tr); toast("Photo added — click Save employees to keep it"); }
+      catch (ex) { toast(ex.message, true); }
+      e.target.value = "";
+    }
+    if (e.target.classList.contains("dp")) paintAvatar(tr);
+  });
+  tb.addEventListener("click", (e) => {
+    if (e.target.classList.contains("ph-rm")) { const tr = e.target.closest("tr"); photos.set(tr, ""); paintAvatar(tr); dirty = true; }
+  });
+  tb.addEventListener("focusout", (e) => { if (e.target.classList.contains("nm")) paintAvatar(e.target.closest("tr")); });
+  tb.addEventListener("input", () => (dirty = true));
+  document.getElementById("add").onclick = () => { tb.insertAdjacentHTML("beforeend", row({ name: "", department: depts[0], tasks: [], active: true, photo: "" })); photos.set(tb.lastElementChild, ""); tb.lastElementChild.querySelector(".nm").focus(); dirty = true; };
+  document.getElementById("save").onclick = async () => {
+    const list = [], renames = [];
+    for (const tr of tb.querySelectorAll("tr")) {
+      const name = tr.querySelector(".nm").value.trim();
+      if (!name) continue;
+      if (list.some((x) => x.name.toLowerCase() === name.toLowerCase())) { toast(`Duplicate name: ${name}`, true); return; }
+      const orig = tr.dataset.orig;
+      if (orig && orig !== name) renames.push({ from: orig, to: name });
+      list.push({ name, department: tr.querySelector(".dp").value, tasks: [...tr.querySelectorAll(".chip input:checked")].map((i) => i.value), active: tr.querySelector(".ac").checked, photo: photos.get(tr) || "", renamedFrom: orig && orig !== name ? orig : undefined });
+    }
+    try { await KPI.saveEmployees(PW, list); data = await KPI.load(120); dirty = false; toast("Employees saved"); viewEmployees(); }
+    catch (e) { toast("Save failed: " + e.message, true); }
+  };
+}
+
+// ───────── demo tools ─────────
+function viewDemo() {
+  document.getElementById("view").innerHTML = `<p class="hint">Only visible in demo mode.</p>
+    <div class="toolbar"><button class="btn" id="r2">Generate new sample data (8 weeks)</button><button class="btn" id="r1">Use only the Excel data</button></div>
+    <p class="hint">Demo mode starts with 8 weeks of generated <b>sample</b> numbers so the charts have history to show. They are not real performance data. “Use only the Excel data” switches to the figures from your spreadsheet (only a few days).</p>`;
+  document.getElementById("r1").onclick = async () => { KPI.demoReset(); data = await KPI.load(); toast("Showing Excel data only"); };
+  document.getElementById("r2").onclick = async () => { KPI.demoRandomize(); data = await KPI.load(); toast("New sample data generated"); };
+}
+
+PW ? KPI.auth(PW).then(boot).catch(() => showLogin()) : showLogin();
+</script>
+</body>
+</html>
