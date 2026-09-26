@@ -21,6 +21,9 @@
   .appbar .brand-eyebrow { font-size: 11px; }
   .appbar .sp { flex: 1; }
   .appbar .icon-btn { width: 36px; height: 36px; }
+  .screens { display: flex; gap: 6px; }
+  .screens .btn { box-shadow: none; padding: 7px 12px; }
+  .screens .btn svg { color: var(--accent-ink); }
   .wrap { max-width: 1240px; margin: 0 auto; padding: 20px; }
   .page-h { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 6px 0 18px; flex-wrap: wrap; }
   .page-h h1 { font-size: 24px; margin: 0; letter-spacing: -0.02em; }
@@ -62,6 +65,12 @@
   .chip:hover { border-color: var(--axis); color: var(--ink-2); }
   .chip input { display: none; }
   .chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+  .dcell { display: flex; flex-direction: column; gap: 8px; }
+  .also { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .also-chips .chip { font-size: 11px; padding: 3px 8px; }
+  .also-chips .chip[hidden] { display: none; }
+  .emp-name small { display: block; font-size: 11px; color: var(--muted); font-weight: 500; }
+  select.td { width: 100%; max-width: 190px; }
   .ph { display: flex; align-items: center; gap: 10px; }
   .ph-av { position: relative; cursor: pointer; display: inline-block; border-radius: 50%; }
   .ph-av input, .linkbtn input { display: none; }
@@ -111,6 +120,7 @@
 <script>
 const { CFG, esc, fmtNum } = KPI;
 const app = document.getElementById("app");
+const SUPA = KPI.BACKEND === "supabase";
 let PW = null; try { PW = sessionStorage.getItem("kpi_pw"); } catch (e) {}
 let data = null;
 let tab = "entry";
@@ -133,24 +143,35 @@ function showLogin(err = "") {
   app.innerHTML = `<div class="login-wrap">${themeBtn()}<form class="card login" id="lf">
     <div class="brand-mark">${KPI.ICONS.logo}</div>
     <h1>Sign in to Admin</h1><div class="hint">${esc(CFG.COMPANY_NAME)}${KPI.DEMO ? " · demo mode — password is <b>admin</b>" : ""}</div>
+    ${SUPA ? `<label for="em">Email</label>
+    <input type="email" id="em" placeholder="you@company.com" autocomplete="username" autofocus>` : ""}
     <label for="pw">Password</label>
-    <input type="password" id="pw" placeholder="Enter admin password" autocomplete="current-password" autofocus>
+    <input type="password" id="pw" placeholder="Enter admin password" autocomplete="current-password" ${SUPA ? "" : "autofocus"}>
     <div class="err" id="err">${esc(err)}</div>
     <button class="btn primary" type="submit">Sign in</button></form></div>`;
   bindTheme();
   document.getElementById("lf").onsubmit = async (e) => {
     e.preventDefault();
     const pw = document.getElementById("pw").value;
+    const em = SUPA ? document.getElementById("em").value.trim() : "";
     document.getElementById("err").textContent = "Checking…";
-    try { await KPI.auth(pw); PW = pw; try { sessionStorage.setItem("kpi_pw", pw); } catch (e) {} await boot(); }
+    try {
+      await KPI.auth(pw, em);
+      // Supabase keeps its own sign-in session; the Sheet / demo re-send the password with each save.
+      PW = SUPA ? "" : pw;
+      if (!SUPA) try { sessionStorage.setItem("kpi_pw", pw); } catch (e) {}
+      await boot();
+    }
     catch (ex) { document.getElementById("err").textContent = ex.message; }
   };
 }
-function logout() { try { sessionStorage.removeItem("kpi_pw"); } catch (e) {} PW = null; showLogin(); }
+function logout(msg = "") { try { sessionStorage.removeItem("kpi_pw"); } catch (e) {} PW = null; KPI.logout(); showLogin(msg); }
+// A save failed because the sign-in is no longer valid
+const authLost = (m) => /password|sign in|not an admin/i.test(m);
 
 async function boot() {
   app.innerHTML = `<div class="wrap"><p class="hint">Loading…</p></div>`;
-  try { data = await KPI.load(120); } catch (e) { app.innerHTML = `<div class="wrap"><p class="err">Could not load data: ${esc(e.message)}</p><p class="hint">Check API_URL in assets/config.js and that the Apps Script is deployed with access “Anyone”.</p></div>`; return; }
+  try { data = await KPI.load(120); } catch (e) { app.innerHTML = `<div class="wrap"><p class="err">Could not load data: ${esc(e.message)}</p><p class="hint">${SUPA ? "Check SUPABASE_URL / SUPABASE_KEY in assets/config.js and that supabase/schema.sql has been run." : "Check API_URL in assets/config.js and that the Apps Script is deployed with access “Anyone”."}</p></div>`; return; }
   shell();
 }
 
@@ -159,12 +180,17 @@ function shell() {
     <div class="appbar"><div class="appbar-in">
       <div class="brand"><div class="brand-mark">${KPI.ICONS.logo}</div><div class="brand-text"><div class="brand-eyebrow">${esc(CFG.COMPANY_NAME)}</div><div class="brand-title">Admin console</div></div></div>
       ${KPI.DEMO ? '<span class="demo-badge">DEMO MODE</span>' : ""}<span class="sp"></span>
-      <a class="btn hide-sm" href="index.html" target="_blank">${KPI.ICONS.external} TV screens</a>
+      ${SUPA && KPI.signedInAs() ? `<span class="hint hide-sm">${esc(KPI.signedInAs())}</span>` : ""}
+      <nav class="screens" aria-label="TV screens">
+        <a class="btn" href="tv-slides.html" title="Slideshow">${KPI.ICONS.play}<span class="hide-sm">Slideshow</span></a>
+        <a class="btn" href="tv-grid.html" title="Team grid">${KPI.ICONS.grid}<span class="hide-sm">Team grid</span></a>
+        <a class="btn" href="tv-departments.html" title="Departments">${KPI.ICONS.list}<span class="hide-sm">Departments</span></a>
+      </nav>
       ${themeBtn()}
       <button class="icon-btn" id="lo" title="Log out" aria-label="Log out">${KPI.ICONS.logout}</button>
     </div></div>
     <div class="wrap">
-    ${KPI.DEMO ? `<div class="demo-note"><b>Demo mode</b> — data is saved only in this browser. Set <b>API_URL</b> in <code>assets/config.js</code> to connect the Google Sheet so the TV and everyone else see your entries.</div>` : ""}
+    ${KPI.DEMO ? `<div class="demo-note"><b>Demo mode</b> — data is saved only in this browser. Connect Supabase (or the Google Sheet) in <code>assets/config.js</code> so the TV and everyone else see your entries — see the README.</div>` : ""}
     <div class="page-h"><div><h1>Production data</h1><p>Record daily output, maintain targets and manage the team.</p></div></div>
     <nav class="tabs">
       <button data-t="entry">Daily entry</button><button data-t="targets">Targets</button><button data-t="employees">Employees</button>${KPI.DEMO ? '<button data-t="demo">Demo tools</button>' : ""}
@@ -186,8 +212,9 @@ function renderTab() {
 // ───────── daily entry ─────────
 function viewEntry() {
   const v = document.getElementById("view");
-  const depts = [...new Set([...CFG.DEPARTMENTS.map((d) => d.name), ...data.employees.map((e) => e.department)])];
-  const emps = data.employees.filter((e) => e.active && (!deptFilter || e.department === deptFilter));
+  const depts = allDepts();
+  const emps = data.employees.filter((e) => e.active && (!deptFilter || e.departments.includes(deptFilter)));
+  const groupOf = (e) => deptFilter || e.department;
   v.innerHTML = `
     <div class="toolbar">
       <button class="btn" id="prev" title="Previous day">◀</button>
@@ -199,16 +226,19 @@ function viewEntry() {
       <select id="dept"><option value="">All departments</option>${depts.map((d) => `<option ${d === deptFilter ? "selected" : ""}>${esc(d)}</option>`).join("")}</select>
     </div>
     <p class="hint">Type the quantity produced. You can type sums like <b>150+50</b>. Leave blank or 0 for none. The grey number is the daily target.</p>
-    <div id="emps">${depts.filter((d) => emps.some((e) => e.department === d)).map((d) => `
+    <div id="emps">${depts.filter((d) => emps.some((e) => groupOf(e) === d)).map((d) => `
       <div class="dept-h"><span class="dept-dot" style="background:${KPI.deptColor(d)}"></span>${esc(d)}</div>
-      ${emps.filter((e) => e.department === d).map((e) => {
+      ${emps.filter((e) => groupOf(e) === d).map((e) => {
+        const multi = e.departments.length > 1;
         const cur = data.byKey[entryDay + "|" + e.name] || {};
         const extra = Object.keys(cur).filter((t) => !e.tasks.includes(t));
         return `<div class="card emp" data-emp="${esc(e.name)}">
-          <div class="emp-name">${KPI.avatar(e, { size: "36px" })}${esc(e.name)}</div>
-          <div class="emp-tasks">${[...e.tasks, ...extra].map((t) => `
-            <div><label title="${esc(t)}">${esc(t)} <span>/ ${fmtNum(data.targets[t])}</span></label>
-            <input class="num" inputmode="decimal" data-task="${esc(t)}" data-orig="${cur[t] ?? ""}" value="${cur[t] ?? ""}"></div>`).join("")}
+          <div class="emp-name">${KPI.avatar(e, { size: "36px" })}<div>${esc(e.name)}${multi ? `<small>${esc(e.departments.join(" + "))}</small>` : ""}</div></div>
+          <div class="emp-tasks">${[...e.tasks, ...extra].map((t) => {
+            const td = KPI.taskDept(data, e, t);
+            return `
+            <div><label title="${esc(t)}${multi ? " · counts for " + esc(td) : ""}">${multi ? `<span class="dept-dot" style="background:${KPI.deptColor(td)}"></span>` : ""}${esc(t)} <span>/ ${fmtNum(data.targets[t])}</span></label>
+            <input class="num" inputmode="decimal" data-task="${esc(t)}" data-orig="${cur[t] ?? ""}" value="${cur[t] ?? ""}"></div>`; }).join("")}
           </div>
           <div class="emp-score"></div></div>`;
       }).join("")}`).join("") || '<p class="hint">No active employees. Add them in the Employees tab.</p>'}</div>
@@ -260,13 +290,16 @@ function viewEntry() {
       await KPI.saveEntries(PW, entryDay, rows);
       data = await KPI.load(120); dirty = false;
       toast(`Saved ${rows.length} value(s) for ${KPI.fmtDate(entryDay)}`); viewEntry();
-    } catch (e) { toast("Save failed: " + e.message, true); btn.disabled = false; btn.textContent = "Save changes"; if (/password/i.test(e.message)) logout(); }
+    } catch (e) { toast("Save failed: " + e.message, true); btn.disabled = false; btn.textContent = "Save changes"; if (authLost(e.message)) logout(e.message); }
   };
   document.getElementById("save").onclick = save;
   document.onkeydown = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "s" && tab === "entry") { e.preventDefault(); save(); } };
 }
 
 // ───────── targets ─────────
+function allDepts() {
+  return [...new Set([...CFG.DEPARTMENTS.map((d) => d.name), ...data.employees.flatMap((e) => e.departments)])];
+}
 function allTasks() {
   const s = new Set(Object.keys(data.targets));
   data.employees.forEach((e) => e.tasks.forEach((t) => s.add(t)));
@@ -276,17 +309,21 @@ function viewTargets() {
   const v = document.getElementById("view");
   const tasks = allTasks();
   const usedBy = (t) => data.employees.filter((e) => e.tasks.includes(t)).map((e) => e.name);
-  v.innerHTML = `<p class="hint">The daily target is what one person should produce in a full day working only on that task. Scores on the TV are output ÷ target.</p>
-    <div class="card tcard"><table class="t"><thead><tr><th>Task</th><th style="width:160px">Daily target</th><th>Used by</th><th></th></tr></thead>
-    <tbody id="tb">${tasks.map((t) => row(t, data.targets[t] ?? "", usedBy(t))).join("")}</tbody></table></div>
+  const depts = allDepts();
+  v.innerHTML = `<p class="hint">The daily target is what one person should produce in a full day working only on that task. Scores on the TV are output ÷ target.<br>
+    <b>Department</b> only matters for people who work in more than one department: their output on that task counts for that department on the Departments screen. Tasks set to “Main department” count for the person’s main department.</p>
+    <div class="card tcard"><table class="t"><thead><tr><th>Task</th><th style="width:160px">Daily target</th><th style="width:210px">Department</th><th>Used by</th><th></th></tr></thead>
+    <tbody id="tb">${tasks.map((t) => row(t, data.targets[t] ?? "", usedBy(t), data.taskDepts[t] || "")).join("")}</tbody></table></div>
     <div class="toolbar" style="margin-top:12px"><input id="newtask" placeholder="New task name"><button class="btn" id="add">+ Add task</button></div>
     <div class="savebar"><button class="btn primary" id="save">Save targets</button></div>`;
-  function row(t, val, users = []) {
+  function row(t, val, users = [], dept = "") {
     return `<tr data-task="${esc(t)}"><td><b>${esc(t)}</b></td><td><input class="num" value="${val}" inputmode="decimal"></td>
+      <td><select class="td"><option value="">Main department</option>${depts.map((d) => `<option ${d === dept ? "selected" : ""}>${esc(d)}</option>`).join("")}</select></td>
       <td class="hint">${esc(users.join(", ")) || "—"}</td><td>${users.length ? "" : '<button class="btn danger del">Remove</button>'}</td></tr>`;
   }
   const tb = document.getElementById("tb");
   tb.addEventListener("input", () => (dirty = true));
+  tb.addEventListener("change", () => (dirty = true));
   tb.addEventListener("click", (e) => { if (e.target.classList.contains("del")) { e.target.closest("tr").remove(); dirty = true; } });
   document.getElementById("add").onclick = () => {
     const n = document.getElementById("newtask").value.trim();
@@ -294,14 +331,16 @@ function viewTargets() {
     tb.insertAdjacentHTML("beforeend", row(n, "", [])); document.getElementById("newtask").value = ""; dirty = true;
   };
   document.getElementById("save").onclick = async () => {
-    const targets = {};
+    const targets = {}, taskDepts = {};
     for (const tr of tb.querySelectorAll("tr")) {
       const q = KPI.parseQty(tr.querySelector("input").value);
       if (Number.isNaN(q)) { toast(`Invalid target for ${tr.dataset.task}`, true); return; }
       if (q) targets[tr.dataset.task] = q;
+      const d = tr.querySelector(".td").value;
+      if (d) taskDepts[tr.dataset.task] = d;
     }
-    try { await KPI.saveTargets(PW, targets); data = await KPI.load(120); dirty = false; toast("Targets saved"); viewTargets(); }
-    catch (e) { toast("Save failed: " + e.message, true); }
+    try { await KPI.saveTargets(PW, targets, taskDepts); data = await KPI.load(120); dirty = false; toast("Targets saved"); viewTargets(); }
+    catch (e) { toast("Save failed: " + e.message, true); if (authLost(e.message)) logout(e.message); }
   };
 }
 
@@ -309,7 +348,7 @@ function viewTargets() {
 function viewEmployees() {
   const v = document.getElementById("view");
   const tasks = allTasks();
-  const depts = [...new Set([...CFG.DEPARTMENTS.map((d) => d.name), ...data.employees.map((e) => e.department)])];
+  const depts = allDepts();
   const photos = new WeakMap(); // <tr> -> photo data URL
   const row = (e) => `<tr data-orig="${esc(e.name)}" data-dept="${esc(e.department)}">
     <td><div class="ph">
@@ -317,12 +356,14 @@ function viewEmployees() {
       <div class="ph-act"><label class="linkbtn">Upload<input type="file" accept="image/*" class="ph-in"></label><button type="button" class="linkbtn danger ph-rm" ${e.photo ? "" : "hidden"}>Remove</button></div>
     </div></td>
     <td><input class="nm" value="${esc(e.name)}" style="width:140px"></td>
-    <td><select class="dp">${depts.map((d) => `<option ${d === e.department ? "selected" : ""}>${esc(d)}</option>`).join("")}</select></td>
+    <td><div class="dcell"><select class="dp" title="Main department">${depts.map((d) => `<option ${d === e.department ? "selected" : ""}>${esc(d)}</option>`).join("")}</select>
+      <span class="also">Also works in</span>
+      <div class="chips also-chips">${depts.map((d) => { const on = (e.departments || []).slice(1).includes(d); return `<label class="chip ${on ? "on" : ""}" ${d === e.department ? "hidden" : ""}><input type="checkbox" class="dp2" value="${esc(d)}" ${on ? "checked" : ""}>${esc(d)}</label>`; }).join("")}</div></div></td>
     <td><div class="chips">${tasks.map((t) => `<label class="chip ${e.tasks.includes(t) ? "on" : ""}"><input type="checkbox" value="${esc(t)}" ${e.tasks.includes(t) ? "checked" : ""}>${esc(t)}</label>`).join("")}</div></td>
     <td><label class="hint"><input type="checkbox" class="ac" ${e.active ? "checked" : ""}> Show</label></td></tr>`;
   v.innerHTML = `<p class="hint">Click a picture (or <b>Upload</b>) to add a profile photo — it is cropped to a square and compressed automatically. Tick the tasks each person does — only those appear in Daily entry. Untick <b>Show</b> to hide someone from the TV without deleting their history. Renaming keeps past entries linked.</p>
     <div class="card tcard"><table class="t emp-table"><thead><tr><th>Photo</th><th>Name</th><th>Department</th><th>Tasks</th><th>TV</th></tr></thead><tbody id="tb">${data.employees.map(row).join("")}</tbody></table></div>
-    <div class="toolbar" style="margin-top:12px"><button class="btn" id="add">+ Add employee</button><span class="hint">New departments/tasks: add tasks in the Targets tab; departments are set in assets/config.js.</span></div>
+    <div class="toolbar" style="margin-top:12px"><button class="btn" id="add">+ Add employee</button><span class="hint">New departments/tasks: add tasks in the Targets tab; departments are set in assets/config.js. For people in two departments, set which department each task counts for in the Targets tab.</span></div>
     <div class="savebar"><button class="btn primary" id="save">Save employees</button></div>`;
   const tb = document.getElementById("tb");
   tb.querySelectorAll("tr").forEach((tr, i) => photos.set(tr, data.employees[i]?.photo || ""));
@@ -341,14 +382,18 @@ function viewEmployees() {
       catch (ex) { toast(ex.message, true); }
       e.target.value = "";
     }
-    if (e.target.classList.contains("dp")) paintAvatar(tr);
+    if (e.target.classList.contains("dp")) {
+      // the main department can't also be an extra one
+      tr.querySelectorAll(".dp2").forEach((c) => { const main = c.value === e.target.value; c.closest(".chip").hidden = main; if (main) { c.checked = false; c.closest(".chip").classList.remove("on"); } });
+      paintAvatar(tr);
+    }
   });
   tb.addEventListener("click", (e) => {
     if (e.target.classList.contains("ph-rm")) { const tr = e.target.closest("tr"); photos.set(tr, ""); paintAvatar(tr); dirty = true; }
   });
   tb.addEventListener("focusout", (e) => { if (e.target.classList.contains("nm")) paintAvatar(e.target.closest("tr")); });
   tb.addEventListener("input", () => (dirty = true));
-  document.getElementById("add").onclick = () => { tb.insertAdjacentHTML("beforeend", row({ name: "", department: depts[0], tasks: [], active: true, photo: "" })); photos.set(tb.lastElementChild, ""); tb.lastElementChild.querySelector(".nm").focus(); dirty = true; };
+  document.getElementById("add").onclick = () => { tb.insertAdjacentHTML("beforeend", row({ name: "", department: depts[0], departments: [depts[0]], tasks: [], active: true, photo: "" })); photos.set(tb.lastElementChild, ""); tb.lastElementChild.querySelector(".nm").focus(); dirty = true; };
   document.getElementById("save").onclick = async () => {
     const list = [], renames = [];
     for (const tr of tb.querySelectorAll("tr")) {
@@ -357,23 +402,26 @@ function viewEmployees() {
       if (list.some((x) => x.name.toLowerCase() === name.toLowerCase())) { toast(`Duplicate name: ${name}`, true); return; }
       const orig = tr.dataset.orig;
       if (orig && orig !== name) renames.push({ from: orig, to: name });
-      list.push({ name, department: tr.querySelector(".dp").value, tasks: [...tr.querySelectorAll(".chip input:checked")].map((i) => i.value), active: tr.querySelector(".ac").checked, photo: photos.get(tr) || "", renamedFrom: orig && orig !== name ? orig : undefined });
+      const main = tr.querySelector(".dp").value;
+      const department = [main, ...[...tr.querySelectorAll(".dp2:checked")].map((i) => i.value).filter((d) => d !== main)].join(", ");
+      list.push({ name, department, tasks: [...tr.querySelectorAll(".chips:not(.also-chips) .chip input:checked")].map((i) => i.value), active: tr.querySelector(".ac").checked, photo: photos.get(tr) || "", renamedFrom: orig && orig !== name ? orig : undefined });
     }
     try { await KPI.saveEmployees(PW, list); data = await KPI.load(120); dirty = false; toast("Employees saved"); viewEmployees(); }
-    catch (e) { toast("Save failed: " + e.message, true); }
+    catch (e) { toast("Save failed: " + e.message, true); if (authLost(e.message)) logout(e.message); }
   };
 }
 
 // ───────── demo tools ─────────
 function viewDemo() {
   document.getElementById("view").innerHTML = `<p class="hint">Only visible in demo mode.</p>
-    <div class="toolbar"><button class="btn" id="r2">Generate new sample data (8 weeks)</button><button class="btn" id="r1">Use only the Excel data</button></div>
-    <p class="hint">Demo mode starts with 8 weeks of generated <b>sample</b> numbers so the charts have history to show. They are not real performance data. “Use only the Excel data” switches to the figures from your spreadsheet (only a few days).</p>`;
+    <div class="toolbar"><button class="btn" id="r2">Generate new sample data (2 years)</button><button class="btn" id="r1">Use only the Excel data</button></div>
+    <p class="hint">Demo mode starts with 2 years of generated <b>sample</b> numbers so the charts have history to show. They are not real performance data. “Use only the Excel data” switches to the figures from your spreadsheet (only a few days).</p>`;
   document.getElementById("r1").onclick = async () => { KPI.demoReset(); data = await KPI.load(); toast("Showing Excel data only"); };
   document.getElementById("r2").onclick = async () => { KPI.demoRandomize(); data = await KPI.load(); toast("New sample data generated"); };
 }
 
-PW ? KPI.auth(PW).then(boot).catch(() => showLogin()) : showLogin();
+if (SUPA) KPI.resume().then((ok) => (ok ? boot() : showLogin()));
+else PW ? KPI.auth(PW).then(boot).catch(() => showLogin()) : showLogin();
 </script>
 </body>
 </html>

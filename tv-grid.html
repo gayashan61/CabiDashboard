@@ -17,7 +17,7 @@
   .tile-top { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
   .tile-id { min-width: 0; flex: 1; }
   .tile-name { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tile-dept { font-size: 0.82rem; color: var(--muted); white-space: nowrap; display: flex; align-items: center; font-weight: 500; margin-top: 0.1rem; }
+  .tile-dept { font-size: 0.82rem; color: var(--muted); white-space: nowrap; display: flex; align-items: center; font-weight: 500; margin-top: 0.1rem; overflow: hidden; }
   .tile-mid { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
   .tile-score { font-size: 2.7rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
   .tile.none .tile-score { font-size: 1.6rem; font-weight: 600; letter-spacing: 0; color: var(--muted); }
@@ -31,12 +31,60 @@
   .tile-spark { height: 3rem; }
   .tile-avg { text-align: right; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
   .tile-avg b { display: block; font-size: 1.15rem; color: var(--ink); letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
+  .grid .tile { cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+  .grid .tile:hover { border-color: var(--axis); box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+  .grid .tile:focus-visible, .mt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* profile view: person on the left (80%), the rest of the team on the right (20%) */
+  .profile { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 1fr); gap: 1.2rem; height: 100%; }
+  .profile[hidden], .grid[hidden] { display: none; }
+  .pf-main { height: 100%; min-height: 0; animation: pf-in .25s ease; }
+  @keyframes pf-in { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+  .pf-side { display: flex; flex-direction: column; min-height: 0; padding: 1rem; gap: 0.8rem; }
+  .pf-side-h { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  .pf-side-h h2 { font-size: 1.05rem; font-weight: 600; margin: 0; }
+  .pf-side-h h2 span { color: var(--muted); font-weight: 500; font-size: 0.9rem; margin-left: 0.4rem; font-variant-numeric: tabular-nums; }
+  .pf-back { font-size: 0.85rem; padding: 0.35rem 0.65rem; box-shadow: none; }
+  .pf-back svg { width: 0.95rem; height: 0.95rem; }
+  .search { position: relative; display: block; }
+  .search svg { position: absolute; left: 0.7rem; top: 50%; transform: translateY(-50%); width: 1rem; height: 1rem; color: var(--muted); pointer-events: none; }
+  .search input {
+    width: 100%; padding: 0.55rem 0.7rem 0.55rem 2.1rem; font: inherit; font-size: 0.95rem; color: var(--ink);
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); transition: border-color .15s, box-shadow .15s;
+  }
+  .search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .pf-list { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); grid-auto-rows: max-content; gap: 0.6rem; align-content: start; padding: 0.3rem; margin: -0.3rem; }
+  .mt {
+    position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0.8rem 0.5rem 0.6rem; text-align: center;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: border-color .15s, background-color .15s;
+  }
+  .mt::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--st-fill); }
+  .mt.good { --st-fill: var(--good); } .mt.warning { --st-fill: var(--warning); } .mt.critical { --st-fill: var(--critical); } .mt.none { --st-fill: var(--none); }
+  .mt:hover { border-color: var(--axis); background: var(--surface-3); }
+  .mt.sel { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent); }
+  .mt-name { font-size: 0.9rem; font-weight: 600; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mt-score { font-size: 1.1rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+  .mt-score.muted { font-size: 0.8rem; font-weight: 500; }
+  .pf-list .empty { grid-column: 1 / -1; padding: 1.5rem 0.5rem; font-size: 0.95rem; }
+  .pf-hint { font-size: 0.78rem; color: var(--muted); text-align: center; }
+  .kiosk .pf-hint, .kiosk .pf-back { display: none; }
 </style>
 </head>
 <body>
 <div class="tv">
   <header class="tv-header" id="hdr"></header>
-  <main class="tv-main"><div class="grid" id="grid"></div></main>
+  <main class="tv-main">
+    <div class="grid" id="grid"></div>
+    <div class="profile" id="profile" hidden>
+      <section class="ps pf-main" id="pf-main"></section>
+      <aside class="card pf-side" aria-label="Team">
+        <div class="pf-side-h"><h2>Team<span id="pf-count"></span></h2><button class="btn pf-back" id="pf-back" title="Back to the grid (Esc)"></button></div>
+        <label class="search"><span id="pf-search-ico"></span><input type="search" id="pf-q" placeholder="Search by name…" autocomplete="off" aria-label="Search team members"></label>
+        <div class="pf-list" id="pf-list"></div>
+        <div class="pf-hint">Esc to go back · / to search</div>
+      </aside>
+    </div>
+  </main>
   <footer class="tv-footer" id="legend"></footer>
 </div>
 <script src="assets/seed-data.js"></script>
@@ -52,11 +100,74 @@ document.getElementById("legend").innerHTML =
 
 const deptOrder = (d) => { const i = KPI.deptNames().indexOf(d); return i < 0 ? 99 : i; };
 const MAX = 150;
+const $ = (id) => document.getElementById(id);
+let state = { data: null, day: null, people: [] };
+let selected = null; // name of the person whose profile is open
+
+$("pf-back").innerHTML = KPI.ICONS.grid + " All";
+$("pf-search-ico").outerHTML = KPI.ICONS.search;
+
+function openProfile(name) {
+  selected = name;
+  drawProfile();
+}
+function closeProfile() {
+  selected = null;
+  $("pf-q").value = "";
+  $("profile").hidden = true;
+  $("grid").hidden = false;
+}
+function drawProfile() {
+  const p = state.people.find((x) => x.name === selected);
+  if (!p) return closeProfile();
+  $("grid").hidden = true;
+  $("profile").hidden = false;
+  $("pf-main").innerHTML = KPI.personView(p, state.day, state.data);
+  drawList();
+}
+function drawList() {
+  const q = $("pf-q").value.trim().toLowerCase();
+  const list = q ? state.people.filter((p) => p.name.toLowerCase().includes(q)) : state.people;
+  $("pf-count").textContent = q ? `${list.length} of ${state.people.length}` : state.people.length;
+  $("pf-list").innerHTML = list.map((p) => {
+    const st = KPI.status(p.today.score);
+    const has = p.today.score != null;
+    return `<div class="mt ${st.key} ${p.name === selected ? "sel" : ""}" role="button" tabindex="0" data-name="${esc(p.name)}" title="${esc(p.name)} · ${esc(p.departments.join(", "))}">
+      ${KPI.avatar(p, { cls: "md", ring: st.key })}
+      <div class="mt-name">${esc(p.name)}</div>
+      <div class="mt-score ${has ? "st-" + st.key : "muted"}">${has ? Math.round(p.today.score) + "%" : "No entry"}</div>
+    </div>`;
+  }).join("") || `<div class="empty">No one matches “${esc($("pf-q").value.trim())}”</div>`;
+}
+
+// Tiles and mini tiles open a profile by click, Enter or Space
+function onPick(e) {
+  const el = e.target.closest("[data-name]");
+  if (!el) return;
+  if (e.type === "keydown" && e.key !== "Enter" && e.key !== " ") return;
+  e.preventDefault();
+  openProfile(el.dataset.name);
+}
+["grid", "pf-list"].forEach((id) => { $(id).addEventListener("click", onPick); $(id).addEventListener("keydown", onPick); });
+$("pf-back").onclick = closeProfile;
+$("pf-q").addEventListener("input", drawList);
+$("pf-q").addEventListener("keydown", (e) => {
+  // Enter opens the first match
+  if (e.key === "Enter") { const first = $("pf-list").querySelector("[data-name]"); if (first) openProfile(first.dataset.name); }
+});
+document.addEventListener("keydown", (e) => {
+  if (!selected) return;
+  const inSearch = document.activeElement === $("pf-q");
+  if (e.key === "Escape") { if (inSearch && $("pf-q").value) { $("pf-q").value = ""; drawList(); } else closeProfile(); }
+  if (e.key === "/" && !inSearch) { e.preventDefault(); $("pf-q").focus(); }
+});
 
 KPI.autoRefresh((data) => {
   const day = KPI.displayDay(data);
   KPI.setHeaderDay(day);
   const people = KPI.summaries(data, day).sort((a, b) => deptOrder(a.department) - deptOrder(b.department) || a.name.localeCompare(b.name));
+  state = { data, day, people };
+  if (selected) drawProfile();
   const n = people.length;
   const cols = n <= 8 ? 4 : n <= 15 ? 5 : n <= 18 ? 6 : n <= 28 ? 7 : 8;
   const grid = document.getElementById("grid");
@@ -69,8 +180,8 @@ KPI.autoRefresh((data) => {
     const w = has ? Math.min(p.today.score, MAX) / MAX * 100 : 0;
     const tasks = p.today.tasks.slice(0, 3).map((t) =>
       `<div><span>${esc(t.task)}</span><b>${fmtNum(t.qty)}<i> / ${fmtNum(t.target)}</i></b></div>`).join("");
-    return `<div class="card tile ${st.key}">
-      <div class="tile-top">${KPI.avatar(p, { cls: "lg", ring: st.key })}<div class="tile-id"><div class="tile-name">${esc(p.name)}</div><div class="tile-dept"><span class="dept-dot" style="background:${KPI.deptColor(p.department)}"></span>${esc(p.department)}</div></div></div>
+    return `<div class="card tile ${st.key}" role="button" tabindex="0" data-name="${esc(p.name)}" title="Open ${esc(p.name)}’s profile">
+      <div class="tile-top">${KPI.avatar(p, { cls: "lg", ring: st.key })}<div class="tile-id"><div class="tile-name">${esc(p.name)}</div><div class="tile-dept">${KPI.deptLabel(p)}</div></div></div>
       <div class="tile-mid"><div class="tile-score ${has ? "st-" + st.key : ""}">${has ? Math.round(p.today.score) + "%" : "No entry yet"}</div>${has ? KPI.pill(p.today.score) : ""}</div>
       ${has ? `<div class="tile-bar"><div class="bar"><span class="bg-${st.key}" style="width:${w}%"></span><i class="tgt" style="left:${100 / MAX * 100}%"></i></div></div>` : ""}
       <div class="tile-tasks">${tasks}</div>

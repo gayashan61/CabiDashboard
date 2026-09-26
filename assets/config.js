@@ -3,8 +3,15 @@
 //  Edit this file after deploying the Google Apps Script backend.
 // ─────────────────────────────────────────────────────────────
 window.KPI_CONFIG = {
-  // Paste your Apps Script Web App URL here (ends with /exec).
-  // Leave empty to run in DEMO MODE (data is kept in this browser only).
+  // ── Backend: fill in ONE of these (Supabase is used if both are set) ──
+  // Supabase: Project Settings ➜ API ➜ Project URL and the publishable ("anon") key.
+  // The publishable key is meant to be public — the database rules in supabase/schema.sql protect the data.
+  // Never put the secret / service_role key here.
+  SUPABASE_URL: "https://bbhtejcxjytxmnxfsjxx.supabase.co",
+  SUPABASE_KEY: "sb_publishable_xBmWeRYsCp1gP2ChF2_oXw_81jR2Pzy",
+
+  // Google Sheet: paste your Apps Script Web App URL here (ends with /exec).
+  // Leave everything empty to run in DEMO MODE (data is kept in this browser only).
   API_URL: "",
 
   COMPANY_NAME: "Production Performance",
@@ -36,6 +43,25 @@ window.KPI_CONFIG = {
     { name: "TH & 2ply" },
     { name: "Packing" },
   ],
+
+  // Which department each task's output counts for — only matters for people who work in more than one
+  // department (Admin ➜ Employees ➜ "Also works in"). Tasks not listed count for the person's main department.
+  // Used only until the Targets tab is saved the first time; after that edit it in Admin ➜ Targets.
+  // (Department names must not contain commas.)
+  DEFAULT_TASK_DEPARTMENTS: {
+    "RT Blank Sheets": "Sheets",
+    "RT Printed Sheets": "Sheets",
+    "P2P Printed 1 Colour": "Sheets",
+    "RT Sheets (Sets)": "Sets",
+    "Numbering": "Sets",
+    "Gluing": "Sets",
+    "TH": "TH & 2ply",
+    "2ply": "TH & 2ply",
+    "Packing": "Packing",
+    "Packing Boxes": "Packing",
+    "Polythene Cut": "Packing",
+    "Polythene Seal": "Packing",
+  },
 
   // Default daily targets per task — used only to seed the Targets tab the first time.
   // Change the real values from the Admin page ➜ Targets.

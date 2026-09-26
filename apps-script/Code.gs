@@ -34,7 +34,7 @@ function doPost(e) {
     switch (body.action) {
       case 'auth': return json_({ ok: true });
       case 'saveEntries': saveEntries_(body.date, body.rows || []); return json_({ ok: true });
-      case 'saveTargets': saveTargets_(body.targets || {}); return json_({ ok: true });
+      case 'saveTargets': saveTargets_(body.targets || {}, body.taskDepts); return json_({ ok: true });
       case 'saveEmployees': saveEmployees_(body.employees || []); return json_({ ok: true });
       default: return json_({ ok: false, error: 'Unknown action' });
     }
@@ -54,7 +54,7 @@ function readAll_(days) {
   const emp = rows_(ss.getSheetByName(SHEET_EMPLOYEES)).map(function (r) {
     return {
       name: String(r[0]).trim(),
-      department: String(r[1]).trim(),
+      department: String(r[1]).trim(), // may list several: "TH & 2ply, Packing" (first = main)
       tasks: String(r[2]).split(',').map(function (s) { return s.trim(); }).filter(String),
       active: !(r[3] === false || String(r[3]).toUpperCase() === 'FALSE'),
       photo: String(r[4] || ''),
@@ -62,8 +62,14 @@ function readAll_(days) {
   }).filter(function (e) { return e.name; });
 
   const targets = {};
-  rows_(ss.getSheetByName(SHEET_TARGETS)).forEach(function (r) {
+  const tsh = ss.getSheetByName(SHEET_TARGETS);
+  // Column C "Department": which department a task counts for (people in two departments).
+  // Left out until the Targets tab has been saved once, so the site falls back to its defaults.
+  const hasDepts = tsh.getLastColumn() >= 3 && String(tsh.getRange(1, 3).getValue()).trim() === 'Department';
+  const taskDepts = hasDepts ? {} : null;
+  rows_(tsh).forEach(function (r) {
     if (r[0] !== '' && Number(r[1])) targets[String(r[0]).trim()] = Number(r[1]);
+    if (hasDepts && r[0] !== '' && String(r[2] || '').trim()) taskDepts[String(r[0]).trim()] = String(r[2]).trim();
   });
 
   const entries = [];
@@ -73,7 +79,9 @@ function readAll_(days) {
     entries.push({ date: d, employee: String(r[1]).trim(), task: String(r[2]).trim(), qty: Number(r[3]) || 0 });
   });
 
-  return { employees: emp, targets: targets, entries: entries };
+  const out = { employees: emp, targets: targets, entries: entries };
+  if (taskDepts) out.taskDepts = taskDepts;
+  return out;
 }
 
 // ───────────────────────── write ─────────────────────────
@@ -108,11 +116,13 @@ function saveEntries_(date, rows) {
   }
 }
 
-function saveTargets_(targets) {
+function saveTargets_(targets, taskDepts) {
   const sh = SpreadsheetApp.getActive().getSheetByName(SHEET_TARGETS);
-  const rows = Object.keys(targets).map(function (k) { return [k, Number(targets[k])]; });
-  sh.getRange(2, 1, Math.max(sh.getLastRow(), 2), 2).clearContent();
-  if (rows.length) sh.getRange(2, 1, rows.length, 2).setValues(rows);
+  taskDepts = taskDepts || {};
+  sh.getRange(1, 3).setValue('Department').setFontWeight('bold');
+  const rows = Object.keys(targets).map(function (k) { return [k, Number(targets[k]), String(taskDepts[k] || '')]; });
+  sh.getRange(2, 1, Math.max(sh.getLastRow(), 2), 3).clearContent();
+  if (rows.length) sh.getRange(2, 1, rows.length, 3).setValues(rows);
 }
 
 function saveEmployees_(list) {
@@ -170,8 +180,8 @@ function setup() {
     return sh;
   };
   const en = make(SHEET_ENTRIES, ['Date', 'Employee', 'Task', 'Qty', 'Updated']);
-  const em = make(SHEET_EMPLOYEES, ['Name', 'Department', 'Tasks (comma separated)', 'Show on TV', 'Photo']);
-  const tg = make(SHEET_TARGETS, ['Task', 'Daily target']);
+  const em = make(SHEET_EMPLOYEES, ['Name', 'Department (main first, comma separated)', 'Tasks (comma separated)', 'Show on TV', 'Photo']);
+  const tg = make(SHEET_TARGETS, ['Task', 'Daily target', 'Department']);
   en.getRange('A:A').setNumberFormat('@');
 
   const seed = SEED_();

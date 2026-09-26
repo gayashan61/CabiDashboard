@@ -32,6 +32,9 @@
   .rscore { font-size: 1.25rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
   .rbar { grid-column: 3 / 4; }
   .ravg { font-size: 0.8rem; color: var(--muted); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  /* people who also work in another department */
+  .rname small { display: block; font-size: 0.78rem; font-weight: 500; color: var(--muted); overflow: hidden; text-overflow: ellipsis; margin-top: 0.05rem; }
+  .rname small .dept-dot { width: 0.55em; height: 0.55em; margin-right: 0.3em; }
 </style>
 </head>
 <body>
@@ -49,7 +52,7 @@ document.getElementById("legend").innerHTML =
   `${KPI.pill(CFG.THRESHOLDS.good, `On target ≥ ${CFG.THRESHOLDS.good}%`)}
    ${KPI.pill(CFG.THRESHOLDS.warning, `Close ${CFG.THRESHOLDS.warning}–${CFG.THRESHOLDS.good - 1}%`)}
    ${KPI.pill(0, `Below ${CFG.THRESHOLDS.warning}%`)}
-   <span class="legend-item">Tick on each bar = 100% of daily target · bars stop at 150%</span>`;
+   <span class="legend-item">Tick on each bar = 100% of daily target · bars stop at 150% · people in two departments count only the tasks done for each</span>`;
 
 const MAX = 150;
 KPI.autoRefresh((data) => {
@@ -57,15 +60,19 @@ KPI.autoRefresh((data) => {
   KPI.setHeaderDay(day);
   const people = KPI.summaries(data, day);
   const names = KPI.deptNames();
-  people.forEach((p) => { if (!names.includes(p.department)) names.push(p.department); });
-  const groups = names.map((n) => ({ name: n, people: people.filter((p) => p.department === n) })).filter((g) => g.people.length);
+  people.forEach((p) => p.departments.forEach((d) => { if (!names.includes(d)) names.push(d); }));
+  // Someone in two departments is listed in both, scored only on the tasks that count for each.
+  const groups = names.map((n) => ({
+    name: n,
+    people: people.filter((p) => p.departments.includes(n)).map((p) => ({ ...p, dept: KPI.deptSummary(data, p, n, day) })),
+  })).filter((g) => g.people.length);
   const el = document.getElementById("cols");
   el.style.gridTemplateColumns = `repeat(${groups.length}, minmax(0, 1fr))`;
   el.innerHTML = groups.map((g) => {
-    const ranked = [...g.people].sort((a, b) => (b.today.score ?? -1) - (a.today.score ?? -1) || a.name.localeCompare(b.name));
-    const withData = ranked.filter((p) => p.today.score != null);
-    const avg = withData.length ? withData.reduce((a, p) => a + p.today.score, 0) / withData.length : null;
-    const onT = withData.filter((p) => p.today.score >= CFG.THRESHOLDS.good).length;
+    const ranked = [...g.people].sort((a, b) => (b.dept.score ?? -1) - (a.dept.score ?? -1) || a.name.localeCompare(b.name));
+    const withData = ranked.filter((p) => p.dept.score != null);
+    const avg = KPI.deptAvg(data, g.name, day);
+    const onT = withData.filter((p) => p.dept.score >= CFG.THRESHOLDS.good).length;
     const st = KPI.status(avg);
     const color = KPI.deptColor(g.name);
     return `<section class="card col" style="--dc:${color}">
@@ -73,19 +80,22 @@ KPI.autoRefresh((data) => {
         <div class="col-top"><div class="col-name"><span class="dept-dot" style="background:${color}"></span>${esc(g.name)}</div>${KPI.pill(avg)}</div>
         <div class="col-stats"><div class="col-avg st-${st.key}">${avg == null ? "–" : Math.round(avg) + "%"}<small>Team average</small></div>
           <div class="col-meta"><b>${onT}</b> of ${withData.length} on target<br>${g.people.length} ${g.people.length === 1 ? "person" : "people"}</div></div>
-        <div class="col-trend">${KPI.trendChart(KPI.teamSeries(data, day, 12, (e) => e.department === g.name), { mini: true, color })}</div>
+        <div class="col-trend">${KPI.trendChart(KPI.deptSeries(data, g.name, day, 12), { mini: true, color })}</div>
       </div>
       <div class="rows">${ranked.map((p, i) => {
-        const s = KPI.status(p.today.score);
-        const has = p.today.score != null;
-        const w = has ? Math.min(p.today.score, MAX) / MAX * 100 : 0;
+        const sc = p.dept.score;
+        const s = KPI.status(sc);
+        const has = sc != null;
+        const w = has ? Math.min(sc, MAX) / MAX * 100 : 0;
+        const others = p.departments.filter((d) => d !== g.name);
+        const also = others.length ? `<small title="${esc(p.name)} also works in ${esc(others.join(", "))}">also ${others.map((d) => `<span class="dept-dot" style="background:${KPI.deptColor(d)}"></span>${esc(d)}`).join(", ")}${has && p.today.score != null && Math.round(p.today.score) !== Math.round(sc) ? ` · ${Math.round(p.today.score)}% total` : ""}</small>` : "";
         return `<div class="row">
           <div class="rank ${i === 0 && has ? "r1" : ""}">${has ? i + 1 : "–"}</div>
           ${KPI.avatar(p, { cls: "md", ring: s.key })}
-          <div class="rname">${esc(p.name)}</div>
-          <div class="rscore ${has ? "st st-" + s.key : "muted"}">${has ? s.icon + Math.round(p.today.score) + "%" : '<span style="font-size:0.9rem;font-weight:500">No entry</span>'}</div>
+          <div class="rname">${esc(p.name)}${also}</div>
+          <div class="rscore ${has ? "st st-" + s.key : "muted"}">${has ? s.icon + Math.round(sc) + "%" : '<span style="font-size:0.9rem;font-weight:500">No entry</span>'}</div>
           <div class="rbar"><div class="bar"><span class="bg-${s.key}" style="width:${w}%"></span><i class="tgt" style="left:${100 / MAX * 100}%"></i></div></div>
-          <div class="ravg">7d avg ${p.weekAvg == null ? "–" : Math.round(p.weekAvg) + "%"}</div>
+          <div class="ravg">7d avg ${p.dept.weekAvg == null ? "–" : Math.round(p.dept.weekAvg) + "%"}</div>
         </div>`;
       }).join("")}</div>
     </section>`;
