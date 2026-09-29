@@ -45,6 +45,14 @@
   .dept-h { margin: 24px 0 10px; font-size: 12px; color: var(--muted); display: flex; align-items: center; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
   .dept-h::after { content: ""; flex: 1; height: 1px; background: var(--border); margin-left: 12px; }
   .wrap.wide { max-width: none; }
+  /* department tabs above the daily sheet */
+  .dtabs { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dtabs button { display: inline-flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--border); color: var(--ink-2); padding: 7px 14px; border-radius: 999px; font: inherit; font-weight: 500; cursor: pointer; white-space: nowrap; }
+  .dtabs button:hover { border-color: var(--axis); color: var(--ink); }
+  .dtabs button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+  .dtabs button .dept-dot { margin-right: 6px; }
+  .dtabs .n { margin-left: 8px; min-width: 20px; padding: 1px 6px; border-radius: 999px; background: var(--surface-3); color: var(--ink-2); font-size: 11px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
+  .dtabs button.on .n { background: var(--accent); color: var(--on-accent); }
   /* daily entry sheet: jobs down the side, people across the top (like the Excel sheet) */
   .eg-wrap { overflow: auto; max-height: calc(100vh - 380px); min-height: 320px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
   table.eg { border-collapse: separate; border-spacing: 0; font-size: 13px; }
@@ -242,6 +250,9 @@ function viewEntry() {
   data.entries.forEach((e) => { if (e.date === entryDay) saved[key(e.job, e.employee)] = e.qty; });
   const text = (k) => (k in entryEdits ? entryEdits[k] : String(saved[k] ?? ""));
   const used = (id) => Object.keys(saved).some((k) => k.startsWith(id + "|")) || Object.keys(entryEdits).some((k) => k.startsWith(id + "|"));
+  // Boxes with a count that day, in one department ("" = all) — shown on its tab
+  const filled = (d) => [...new Set([...Object.keys(saved), ...Object.keys(entryEdits)])]
+    .filter((k) => KPI.parseQty(text(k)) > 0 && (!d || data.jobById[k.slice(0, k.indexOf("|"))]?.department === d)).length;
   // Removed jobs only appear if they have a count that day (so it can still be corrected)
   const jobs = data.jobs.filter((j) => (!deptFilter || j.department === deptFilter) && ((j.active && depts.includes(j.department)) || used(j.id)));
   const people = data.employees.filter((e) => {
@@ -267,9 +278,14 @@ function viewEntry() {
       <button class="btn" id="next" title="Next day">▶</button>
       <button class="btn" id="today">Today</button>
       <span class="datebig">${esc(KPI.fmtDate(entryDay, { weekday: "long", day: "numeric", month: "long", year: "numeric" }))}</span>
+    </div>
+    <div class="toolbar">
+      <nav class="dtabs" aria-label="Department">${["", ...depts].map((d) => {
+        const n = filled(d);
+        return `<button type="button" data-d="${esc(d)}" class="${d === deptFilter ? "on" : ""}" aria-pressed="${d === deptFilter}">${d ? dot(d) + esc(d) : "All departments"}${n ? `<span class="n" title="${n} count(s) filled in">${n}</span>` : ""}</button>`;
+      }).join("")}</nav>
       <span class="sp"></span>
       ${deptFilter ? `<label class="hint"><input type="checkbox" id="members" ${onlyMembers ? "checked" : ""}> Only people in ${esc(deptFilter)}</label>` : ""}
-      <select id="dept"><option value="">All departments</option>${depts.map((d) => `<option ${d === deptFilter ? "selected" : ""}>${esc(d)}</option>`).join("")}</select>
     </div>
     <p class="hint">Type each person's count in the row of the task they did, like the Excel sheet. Sums like <b>1500+250</b> work; leave blank for none.
       <b>Enter</b> / arrow keys move between boxes, <b>Ctrl+S</b> saves. Shaded boxes = the person isn't in that department (you can still fill them).<br>
@@ -287,7 +303,7 @@ function viewEntry() {
   document.getElementById("next").onclick = () => setDay(KPI.addDays(entryDay, 1));
   document.getElementById("next").disabled = entryDay >= KPI.todayKey();
   document.getElementById("today").onclick = () => setDay(KPI.todayKey());
-  document.getElementById("dept").onchange = (e) => { deptFilter = e.target.value; viewEntry(); };
+  v.querySelector(".dtabs").onclick = (e) => { const b = e.target.closest("[data-d]"); if (b) { deptFilter = b.dataset.d; viewEntry(); } };
   const mem = document.getElementById("members");
   if (mem) mem.onchange = () => { onlyMembers = mem.checked; viewEntry(); };
 
@@ -324,6 +340,13 @@ function viewEntry() {
     });
   };
   const refresh = () => {
+    v.querySelectorAll(".dtabs [data-d]").forEach((b) => {
+      const n = filled(b.dataset.d);
+      let s = b.querySelector(".n");
+      if (!n) return s?.remove();
+      if (!s) { s = document.createElement("span"); s.className = "n"; b.appendChild(s); }
+      s.textContent = n; s.title = `${n} count(s) filled in`;
+    });
     const { out, bad } = changes();
     dirty = out.length > 0 || bad.length > 0;
     document.getElementById("save").disabled = !out.length || bad.length > 0;
