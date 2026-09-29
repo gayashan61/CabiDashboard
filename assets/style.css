@@ -201,29 +201,23 @@ body.history .date-pick { background: var(--accent-soft); border-color: color-mi
   font: inherit; font-size: 0.95rem; font-weight: 600; color: var(--ink); cursor: pointer; font-variant-numeric: tabular-nums;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; padding: 0;
 }
-.cal-d i { width: 0.36rem; height: 0.36rem; border-radius: 50%; }
+.cal-d i { width: 0.36rem; height: 0.36rem; border-radius: 50%; background: var(--accent); }
 .cal-d:hover { background: var(--surface-2); border-color: var(--border); }
 .cal-d:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .cal-d.off { color: var(--muted); font-weight: 500; }
 .cal-d.today { border-color: var(--axis); }
 .cal-d.sel { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.cal-d.sel i { box-shadow: 0 0 0 1.5px var(--on-accent); }
+.cal-d.sel i { background: var(--on-accent); }
 .cal-d:disabled { color: var(--axis); cursor: default; background: none; border-color: transparent; }
 .cal-f { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.7rem; padding-top: 0.7rem; border-top: 1px solid var(--grid); }
 .cal-key { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.78rem; color: var(--muted); }
-.cal-key i { width: 0.45rem; height: 0.45rem; border-radius: 50%; }
-.cal-key i:last-of-type { margin-right: 0.3rem; }
+.cal-key i { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--accent); margin-right: 0.3rem; }
 .cal-btns { display: flex; gap: 0.4rem; }
 .cal-btns .btn { font-size: 0.85rem; padding: 0.35rem 0.7rem; box-shadow: none; }
 .hdr-live-btn { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--accent-ink); cursor: pointer; }
 .hdr-live-btn:hover { text-decoration: underline; }
 .hdr-clock { font-size: 2.1rem; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; padding-left: 1.2rem; border-left: 1px solid var(--border); }
 .hdr-actions { display: flex; gap: 0.5rem; }
-.demo-badge {
-  display: inline-flex; align-items: center; gap: 0.35rem; background: var(--warning-soft); color: var(--warning-ink);
-  border: 1px solid color-mix(in srgb, var(--warning) 45%, transparent); font-weight: 700; font-size: 0.75rem; letter-spacing: 0.04em;
-  padding: 0.25rem 0.6rem; border-radius: 999px; white-space: nowrap;
-}
 :root:not([data-theme="dark"]) .tv-header { background: linear-gradient(180deg, #ffffff, #f6fbfa); border-bottom-color: var(--border); }
 :root:not([data-theme="dark"]) .seg { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 18%, transparent); }
 :root:not([data-theme="dark"]) .seg a { color: var(--accent-ink); }
@@ -237,7 +231,8 @@ body.history .date-pick { background: var(--accent-soft); border-color: color-mi
 .kiosk .date-pick { pointer-events: none; }
 .kiosk .tv { cursor: none; }
 
-.tv-main { flex: 1 1 auto; min-height: 0; padding: 1.4rem 2rem; }
+/* More people or departments than fit? The main area scrolls instead of squeezing everything. */
+.tv-main { flex: 1 1 auto; min-height: 0; padding: 1.4rem 2rem; overflow: auto; scrollbar-width: thin; }
 .tv-footer {
   flex: 0 0 auto; display: flex; gap: 1.6rem; justify-content: center; align-items: center; flex-wrap: wrap;
   padding: 0.6rem 2rem; color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--border); background: var(--surface);
@@ -300,7 +295,8 @@ body.history .date-pick { background: var(--accent-soft); border-color: color-mi
 .ps-name { font-size: 3.6rem; font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; }
 .ps-dept { font-size: 1.2rem; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; margin-top: 0.3rem; font-weight: 500; }
 .ps-score { margin-left: auto; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; }
-.ps-score .big { font-size: 5.6rem; font-weight: 800; line-height: 0.9; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.ps-score .big { font-size: 5.6rem; font-weight: 800; line-height: 0.9; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ps-score .big small { font-size: 1.4rem; font-weight: 600; letter-spacing: 0; color: var(--muted); margin-left: 0.5rem; }
 .ps-score .pill { font-size: 1.1rem; }
 .ps-mini { display: flex; gap: 2.2rem; padding-left: 2.2rem; margin-left: 1.2rem; border-left: 1px solid var(--border); }
 .ps-mini div { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
@@ -322,6 +318,9 @@ body.history .date-pick { background: var(--accent-soft); border-color: color-mi
 .pseg button { background: none; border: 0; padding: 0.3rem 0.7rem; border-radius: 0.45rem; font: inherit; font-size: 0.85rem; font-weight: 500; color: var(--ink-2); cursor: pointer; }
 .pseg button:hover { color: var(--ink); }
 .pseg button.on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--shadow); }
+.pseg button .dept-dot { margin-right: 0.35em; }
+.pbtns { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }
+.task-h > span:first-child { display: flex; align-items: center; }
 .card-h .card-title .card-sub { font-weight: 400; }
 .c7-v span { background: var(--surface); padding: 0 0.3rem; border-radius: 4px; }
 .c7-t { position: absolute; left: -0.55rem; right: -0.55rem; border-top: 2px dashed var(--axis); }
@@ -348,6 +347,12 @@ body.history .date-pick { background: var(--accent-soft); border-color: color-mi
 .av.xl.ring { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--ring-c); }
 
 .empty { color: var(--muted); text-align: center; padding: 3rem; font-size: 1.2rem; }
+/* setup / connection problem shown over the TV screens */
+.load-problem {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 30; max-width: min(40rem, calc(100vw - 32px));
+  background: var(--surface); color: var(--ink); border: 1px solid var(--warning); border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  padding: 1.4rem 1.6rem; font-size: 1.1rem; line-height: 1.5; text-align: center;
+}
 .muted { color: var(--muted); }
 
 /* ---------- Landing ---------- */

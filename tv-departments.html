@@ -19,17 +19,19 @@
   .col-stats { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 0.8rem; }
   .col-avg { font-size: 2.8rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
   .col-avg small { display: block; font-size: 0.75rem; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 0.35rem; }
+  .col-avg i { font-style: normal; font-size: 1rem; font-weight: 600; color: var(--muted); letter-spacing: 0; margin-left: 0.3rem; }
   .col-trend { height: 3.2rem; margin-top: 0.7rem; }
   .col-meta { text-align: right; color: var(--ink-2); font-size: 0.95rem; line-height: 1.5; }
   .col-meta b { color: var(--ink); }
-  .rows { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 0.4rem 1.4rem 0.8rem; }
+  .rows { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 0.4rem 1.4rem 0.8rem; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
   .row { display: grid; grid-template-columns: 1.3rem 2.8rem minmax(0, 1fr) 7rem; grid-template-rows: auto auto; column-gap: 0.75rem; row-gap: 0.4rem; align-items: center; padding: 0.65rem 0; border-bottom: 1px solid var(--grid); }
   .row .av { grid-row: span 2; }
   .row:last-child { border-bottom: 0; }
   .rank { grid-row: span 2; font-size: 1.05rem; font-weight: 700; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
   .rank.r1 { color: var(--warning-ink); }
   .rname { font-size: 1.2rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .rscore { font-size: 1.25rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+  .rscore { font-size: 1.25rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .rscore small { font-size: 0.75rem; font-weight: 600; color: var(--muted); margin-left: 0.2rem; }
   .rbar { grid-column: 3 / 4; }
   .ravg { font-size: 0.8rem; color: var(--muted); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
   /* people who also work in another department */
@@ -43,63 +45,56 @@
   <main class="tv-main"><div class="cols" id="cols"></div></main>
   <footer class="tv-footer" id="legend"></footer>
 </div>
-<script src="assets/seed-data.js"></script>
 <script src="assets/core.js"></script>
 <script>
-const { CFG, esc } = KPI;
+const { CFG, esc, fmtNum, fmtFull, status } = KPI;
 KPI.mountHeader(document.getElementById("hdr"), "Department Leaderboards", "tv-departments.html");
 document.getElementById("legend").innerHTML =
-  `${KPI.pill(CFG.THRESHOLDS.good, `On target ≥ ${CFG.THRESHOLDS.good}%`)}
-   ${KPI.pill(CFG.THRESHOLDS.warning, `Close ${CFG.THRESHOLDS.warning}–${CFG.THRESHOLDS.good - 1}%`)}
-   ${KPI.pill(0, `Below ${CFG.THRESHOLDS.warning}%`)}
-   <span class="legend-item">Tick on each bar = 100% of daily target · bars stop at 150% · people in two departments count only the tasks done for each</span>`;
+  `${KPI.pill(CFG.THRESHOLDS.good / 100, `Above avg ≥ ${CFG.THRESHOLDS.good}%`)}
+   ${KPI.pill(CFG.THRESHOLDS.warning / 100, `Near avg ${CFG.THRESHOLDS.warning}–${CFG.THRESHOLDS.good - 1}%`)}
+   ${KPI.pill(0, `Below avg < ${CFG.THRESHOLDS.warning}%`)}
+   <span class="legend-item">Ranked by today's count · tick on each bar = the department average · bars stop at 150%</span>`;
 
-const MAX = 150;
 KPI.autoRefresh((data) => {
   const day = KPI.displayDay(data);
   KPI.setHeaderDay(day);
   const people = KPI.summaries(data, day);
-  const names = KPI.deptNames();
-  people.forEach((p) => p.departments.forEach((d) => { if (!names.includes(d)) names.push(d); }));
-  // Someone in two departments is listed in both, scored only on the tasks that count for each.
-  const groups = names.map((n) => ({
-    name: n,
-    people: people.filter((p) => p.departments.includes(n)).map((p) => ({ ...p, dept: KPI.deptSummary(data, p, n, day) })),
-  })).filter((g) => g.people.length);
+  const names = KPI.deptNames(data);
+  const groups = names.map((n) => ({ name: n, people: KPI.deptPeople(data, people, n, day) })).filter((g) => g.people.length);
   const el = document.getElementById("cols");
-  el.style.gridTemplateColumns = `repeat(${groups.length}, minmax(0, 1fr))`;
+  // Columns share the width, but never get narrower than a readable leaderboard — then the page scrolls sideways.
+  el.style.gridTemplateColumns = `repeat(${groups.length}, minmax(19rem, 1fr))`;
   el.innerHTML = groups.map((g) => {
-    const ranked = [...g.people].sort((a, b) => (b.dept.score ?? -1) - (a.dept.score ?? -1) || a.name.localeCompare(b.name));
-    const withData = ranked.filter((p) => p.dept.score != null);
-    const avg = KPI.deptAvg(data, g.name, day);
-    const onT = withData.filter((p) => p.dept.score >= CFG.THRESHOLDS.good).length;
-    const st = KPI.status(avg);
+    const dd = KPI.deptDay(data, g.name, day);
+    const unit = KPI.unit(data, g.name);
+    const weekAvg = KPI.deptWeekAvg(data, g.name, day);
+    const vsWeek = dd.total != null && weekAvg ? dd.total / weekAvg : null;
+    const above = g.people.filter((p) => p.dept && p.dept.ratio >= CFG.THRESHOLDS.good / 100).length;
     const color = KPI.deptColor(g.name);
+    const weekPill = vsWeek == null ? KPI.pill(null) : KPI.pill(vsWeek, KPI.vsAvg(vsWeek).replace("vs avg", "vs 7-day").replace("at avg", "= 7-day avg"));
     return `<section class="card col" style="--dc:${color}">
       <div class="col-head">
-        <div class="col-top"><div class="col-name"><span class="dept-dot" style="background:${color}"></span>${esc(g.name)}</div>${KPI.pill(avg)}</div>
-        <div class="col-stats"><div class="col-avg st-${st.key}">${avg == null ? "–" : Math.round(avg) + "%"}<small>Team average</small></div>
-          <div class="col-meta"><b>${onT}</b> of ${withData.length} on target<br>${g.people.length} ${g.people.length === 1 ? "person" : "people"}</div></div>
-        <div class="col-trend">${KPI.trendChart(KPI.deptSeries(data, g.name, day, 12), { mini: true, color })}</div>
+        <div class="col-top"><div class="col-name"><span class="dept-dot" style="background:${color}"></span>${esc(g.name)}</div>${weekPill}</div>
+        <div class="col-stats"><div class="col-avg">${dd.total == null ? "–" : fmtNum(dd.total)}<i>${esc(unit)}</i><small>Total ${esc(KPI.dayWord(day))}</small></div>
+          <div class="col-meta">avg <b>${fmtNum(dd.avg)}</b> per person<br><b>${dd.n}</b> of ${g.people.length} logged${dd.n ? ` · <b>${above}</b> above avg` : ""}</div></div>
+        <div class="col-trend" title="Daily total, last 12 working days">${KPI.trendChart(KPI.deptSeries(data, g.name, day, 12), { mini: true, color })}</div>
       </div>
-      <div class="rows">${ranked.map((p, i) => {
-        const sc = p.dept.score;
-        const s = KPI.status(sc);
-        const has = sc != null;
-        const w = has ? Math.min(sc, MAX) / MAX * 100 : 0;
+      <div class="rows">${g.people.map((p, i) => {
+        const x = p.dept;
+        const s = status(x ? x.ratio : null);
         const others = p.departments.filter((d) => d !== g.name);
-        const also = others.length ? `<small title="${esc(p.name)} also works in ${esc(others.join(", "))}">also ${others.map((d) => `<span class="dept-dot" style="background:${KPI.deptColor(d)}"></span>${esc(d)}`).join(", ")}${has && p.today.score != null && Math.round(p.today.score) !== Math.round(sc) ? ` · ${Math.round(p.today.score)}% total` : ""}</small>` : "";
+        const also = others.length ? `<small title="${esc(p.name)} also works in ${esc(others.join(", "))}">also ${others.map((d) => `<span class="dept-dot" style="background:${KPI.deptColor(d)}"></span>${esc(d)}`).join(", ")}</small>` : "";
         return `<div class="row">
-          <div class="rank ${i === 0 && has ? "r1" : ""}">${has ? i + 1 : "–"}</div>
+          <div class="rank ${i === 0 && x ? "r1" : ""}">${x ? i + 1 : "–"}</div>
           ${KPI.avatar(p, { cls: "md", ring: s.key })}
           <div class="rname">${esc(p.name)}${also}</div>
-          <div class="rscore ${has ? "st st-" + s.key : "muted"}">${has ? s.icon + Math.round(sc) + "%" : '<span style="font-size:0.9rem;font-weight:500">No entry</span>'}</div>
-          <div class="rbar"><div class="bar"><span class="bg-${s.key}" style="width:${w}%"></span><i class="tgt" style="left:${100 / MAX * 100}%"></i></div></div>
-          <div class="ravg">7d avg ${p.dept.weekAvg == null ? "–" : Math.round(p.dept.weekAvg) + "%"}</div>
+          <div class="rscore ${x ? "st st-" + s.key : "muted"}" title="${x ? esc(KPI.vsAvg(x.ratio)) : ""}">${x ? `${s.icon}${fmtFull(x.qty)}<small>${esc(unit)}</small>` : '<span style="font-size:0.9rem;font-weight:500">No entry</span>'}</div>
+          <div class="rbar"><div class="bar"><span class="bg-${s.key}" style="width:${KPI.ratioW(x ? x.ratio : null)}%"></span><i class="tgt" style="left:${KPI.AVG_TICK}%"></i></div></div>
+          <div class="ravg">7d avg ${fmtNum(p.deptWeekAvg)}</div>
         </div>`;
       }).join("")}</div>
     </section>`;
-  }).join("") || '<div class="empty">No employees yet — add them from the Admin page.</div>';
+  }).join("") || '<div class="empty">No departments or employees yet — add them from the Admin page.</div>';
 });
 </script>
 </body>

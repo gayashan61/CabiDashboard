@@ -27,10 +27,11 @@
   .paused .progress i.on > b { background: var(--muted); }
 
   /* overview */
-  .ov { grid-template-columns: 0.9fr 1.3fr 1fr; grid-template-rows: auto minmax(0, 1fr); }
-  .kpis { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.3rem; }
+  .ov { grid-template-columns: 1.15fr 1fr; grid-template-rows: auto minmax(0, 1fr); }
+  .kpis { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1.3rem; }
   .kpi { padding: 1.3rem 1.5rem; display: flex; flex-direction: column; gap: 0.55rem; }
-  .kpi-l { color: var(--ink-2); font-size: 1rem; font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
+  .kpi-l { color: var(--ink-2); font-size: 1.05rem; font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+  .kpi-l > span:first-child { display: flex; align-items: center; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-v { font-size: 3.6rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
   .kpi-v span { font-size: 1.8rem; color: var(--muted); font-weight: 600; letter-spacing: 0; }
   .kpi-s { color: var(--muted); font-size: 0.92rem; }
@@ -42,7 +43,17 @@
   .lb-rank.r1 { background: var(--warning-soft); color: var(--warning-ink); }
   .lb-name { font-weight: 700; font-size: 1.4rem; letter-spacing: -0.01em; }
   .lb-name small { display: flex; align-items: center; font-size: 0.9rem; font-weight: 500; color: var(--muted); letter-spacing: 0; margin-top: 0.1rem; }
-  .lb-val { text-align: right; font-weight: 800; font-size: 1.6rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .lb-val { text-align: right; font-weight: 800; font-size: 1.6rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .lb-val small { font-size: 0.85rem; font-weight: 600; color: var(--muted); letter-spacing: 0; margin-left: 0.25rem; }
+  .lb-val em { display: block; font-style: normal; font-size: 0.85rem; font-weight: 600; letter-spacing: 0; }
+  /* department trends: one small chart per department */
+  .dtrends { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 0.4rem; }
+  .dtrend { flex: 1; min-height: 3.5rem; display: grid; grid-template-columns: 9rem minmax(0, 1fr) 6.5rem; align-items: center; gap: 1rem; border-bottom: 1px solid var(--grid); padding-bottom: 0.4rem; }
+  .dtrend:last-child { border-bottom: 0; }
+  .dtrend-n { font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; white-space: nowrap; overflow: hidden; }
+  .dtrend-c { height: 100%; min-height: 3rem; }
+  .dtrend-v { text-align: right; font-size: 1.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .dtrend-v small { display: block; font-size: 0.8rem; font-weight: 500; color: var(--muted); }
   .dept-row { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 4.5rem; align-items: center; gap: 0.9rem; font-size: 1.2rem; white-space: nowrap; font-weight: 600; }
   .dept-row > div:first-child { display: flex; align-items: center; }
   .dept-row .bar { height: 1rem; }
@@ -62,10 +73,9 @@
     </div>
     <span class="lbl" id="slbl"></span><div class="progress" id="dots"></div></div>
 </div>
-<script src="assets/seed-data.js"></script>
 <script src="assets/core.js"></script>
 <script>
-const { CFG, esc, fmtFull, ICONS } = KPI;
+const { CFG, esc, fmtNum, fmtFull, ICONS, status } = KPI;
 const qs = new URLSearchParams(location.search);
 const SECS = Number(qs.get("interval")) || CFG.SLIDE_SECONDS;
 KPI.mountHeader(document.getElementById("hdr"), "Team Performance", "tv-slides.html");
@@ -75,48 +85,40 @@ let idx = 0;
 let startedAt = Date.now();
 let paused = false;
 let pausedAt = 0;
-const pct = (v) => (v == null ? "–" : Math.round(v) + "%");
-const barW = (v, max = 150) => (v == null ? 0 : Math.min(v, max) / max * 100);
 
+// Team overview: each department's total today against its recent days, trends, and today's standouts
 function overview(people, data, day) {
   const on = KPI.dayWord(day);
-  const withData = people.filter((p) => p.today.score != null);
-  const avg = withData.length ? withData.reduce((a, p) => a + p.today.score, 0) / withData.length : null;
-  const onT = withData.filter((p) => p.today.score >= CFG.THRESHOLDS.good).length;
-  const weekPeople = people.filter((p) => p.weekAvg != null);
-  const weekAvg = weekPeople.length ? weekPeople.reduce((a, p) => a + p.weekAvg, 0) / weekPeople.length : null;
-  const st = KPI.status(avg), wst = KPI.status(weekAvg);
-  const top = [...withData].sort((a, b) => b.today.score - a.today.score).slice(0, 6);
-  const depts = KPI.deptNames().map((name) => ({ name, avg: KPI.deptAvg(data, name, day) }));
-  const onPct = withData.length ? onT / withData.length * 100 : 0;
-  const entPct = people.length ? withData.length / people.length * 100 : 0;
+  const depts = KPI.deptNames(data).map((name) => {
+    const dd = KPI.deptDay(data, name, day);
+    const weekAvg = KPI.deptWeekAvg(data, name, day);
+    const members = people.filter((p) => p.departments.includes(name)).length;
+    return { name, unit: KPI.unit(data, name), ...dd, weekAvg, members, vs: dd.total != null && weekAvg ? dd.total / weekAvg : null };
+  });
+  // Each person's best department today, ranked by how far above that department's average they are
+  const top = people.filter((p) => p.today.has)
+    .map((p) => ({ p, t: [...p.today.parts].sort((a, b) => (b.ratio ?? 1) - (a.ratio ?? 1))[0] }))
+    .sort((a, b) => (b.t.ratio ?? 1) - (a.t.ratio ?? 1) || b.t.qty - a.t.qty).slice(0, 6);
   return `<div class="slide ov">
-    <div class="kpis">
-      <div class="card kpi"><div class="kpi-l">Team average ${on} ${KPI.pill(avg)}</div><div class="kpi-v st-${st.key}">${pct(avg)}</div>
-        <div class="bar"><span class="bg-${st.key}" style="width:${barW(avg)}%"></span><i class="tgt" style="left:66.67%"></i></div></div>
-      <div class="card kpi"><div class="kpi-l">On target ${on}</div><div class="kpi-v">${onT}<span> / ${withData.length}</span></div>
-        <div class="bar"><span class="bg-good" style="width:${onPct}%"></span></div><div class="kpi-s">people at ≥ ${CFG.THRESHOLDS.good}% of target</div></div>
-      <div class="card kpi"><div class="kpi-l">Output logged</div><div class="kpi-v">${withData.length}<span> / ${people.length}</span></div>
-        <div class="bar"><span style="width:${entPct}%;background:var(--accent)"></span></div><div class="kpi-s">team members with entries</div></div>
-      <div class="card kpi"><div class="kpi-l">7-day team average ${KPI.pill(weekAvg)}</div><div class="kpi-v st-${wst.key}">${pct(weekAvg)}</div>
-        <div class="bar"><span class="bg-${wst.key}" style="width:${barW(weekAvg)}%"></span><i class="tgt" style="left:66.67%"></i></div></div>
-    </div>
-    <div class="card panel"><div class="card-h"><h2 class="card-title">Departments ${on}</h2><span class="card-sub">tick = 100% of target</span></div>
-      <div class="lb">${depts.map((d) => {
-        const s = KPI.status(d.avg);
-        return `<div class="dept-row"><div><span class="dept-dot" style="background:${KPI.deptColor(d.name)}"></span>${esc(d.name)}</div>
-          <div class="bar"><span class="bg-${s.key}" style="width:${barW(d.avg)}%"></span><i class="tgt" style="left:66.67%"></i></div>
-          <div class="v st st-${s.key}" style="justify-content:flex-end">${pct(d.avg)}</div></div>`;
-      }).join("")}</div></div>
-    <div class="card panel"><div class="card-h"><h2 class="card-title">Team trend</h2><span class="card-sub">average score · last 20 working days</span></div>
-      <div class="chart-fill">${KPI.trendChart(KPI.teamSeries(data, day, 20), { values: "last", xLabels: 5 })}</div></div>
-    <div class="card panel"><div class="card-h"><h2 class="card-title" style="display:flex;align-items:center;gap:.5rem">${ICONS.trophy} Top performers ${on}</h2><span class="card-sub">% of daily target</span></div>
-      <div class="lb">${top.length ? top.map((p, i) => {
-        const s = KPI.status(p.today.score);
+    <div class="kpis">${depts.map((d) => {
+      const s = status(d.vs);
+      return `<div class="card kpi"><div class="kpi-l"><span><span class="dept-dot" style="background:${KPI.deptColor(d.name)}"></span>${esc(d.name)}</span>${d.vs == null ? "" : KPI.pill(d.vs, KPI.vsAvg(d.vs).replace("vs avg", "vs 7-day").replace("at avg", "= 7-day avg"))}</div>
+        <div class="kpi-v">${d.total == null ? "–" : fmtNum(d.total)}<span> ${esc(d.unit)}</span></div>
+        <div class="bar" title="Tick = average daily total of the last 7 working days"><span class="bg-${s.key}" style="width:${KPI.ratioW(d.vs)}%"></span><i class="tgt" style="left:${KPI.AVG_TICK}%"></i></div>
+        <div class="kpi-s">7-day avg ${fmtNum(d.weekAvg)} · ${d.n} of ${d.members} logged</div></div>`;
+    }).join("") || '<div class="card kpi"><div class="kpi-s">No departments yet — add them in Admin ➜ Departments.</div></div>'}</div>
+    <div class="card panel"><div class="card-h"><h2 class="card-title">Department totals</h2><span class="card-sub">per day · last 20 working days</span></div>
+      <div class="dtrends">${depts.map((d) => `<div class="dtrend">
+        <div class="dtrend-n"><span class="dept-dot" style="background:${KPI.deptColor(d.name)}"></span>${esc(d.name)}</div>
+        <div class="dtrend-c">${KPI.trendChart(KPI.deptSeries(data, d.name, day, 20), { mini: true, color: KPI.deptColor(d.name) })}</div>
+        <div class="dtrend-v">${d.total == null ? "–" : fmtNum(d.total)}<small>${esc(d.unit)} ${esc(on)}</small></div></div>`).join("")}</div></div>
+    <div class="card panel"><div class="card-h"><h2 class="card-title" style="display:flex;align-items:center;gap:.5rem">${ICONS.trophy} Top performers ${on}</h2><span class="card-sub">vs their department's average</span></div>
+      <div class="lb">${top.length ? top.map(({ p, t }, i) => {
+        const s = status(t.ratio);
         return `<div class="lb-row"><div class="lb-rank ${i === 0 ? "r1" : ""}">${i + 1}</div>${KPI.avatar(p, { size: "3.4rem", ring: s.key })}
-          <div class="lb-name">${esc(p.name)}<small>${KPI.deptLabel(p)}</small></div>
-          <div class="lb-val st-${s.key}">${pct(p.today.score)}</div></div>`;
-      }).join("") : '<div class="empty">No entries yet for this day</div>'}</div></div>
+          <div class="lb-name">${esc(p.name)}<small><span class="dept-dot" style="background:${KPI.deptColor(t.dept)}"></span>${esc(t.dept)}</small></div>
+          <div class="lb-val">${fmtFull(t.qty)}<small>${esc(t.unit)}</small><em class="st-${s.key}">${esc(KPI.vsAvg(t.ratio) || "only one today")}</em></div></div>`;
+      }).join("") : '<div class="empty">No counts yet for this day</div>'}</div></div>
   </div>`;
 }
 
@@ -124,7 +126,7 @@ function render(data) {
   const day = KPI.displayDay(data);
   KPI.setHeaderDay(day);
   const people = KPI.summaries(data, day);
-  const names = KPI.deptNames();
+  const names = KPI.deptNames(data);
   const deptIdx = (d) => { const i = names.indexOf(d); return i < 0 ? 99 : i; };
   people.sort((a, b) => deptIdx(a.department) - deptIdx(b.department) || a.name.localeCompare(b.name));
   const curKey = slides[idx]?.key;
