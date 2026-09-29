@@ -34,6 +34,7 @@
     search: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
     close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
     trash: svg('<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>'),
+    download: svg('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),
   };
 
   // Day chosen with the header date picker (?date=YYYY-MM-DD). null = live (follows DISPLAY_DAY).

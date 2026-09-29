@@ -278,6 +278,8 @@ function viewEntry() {
       <button class="btn" id="next" title="Next day">▶</button>
       <button class="btn" id="today">Today</button>
       <span class="datebig">${esc(KPI.fmtDate(entryDay, { weekday: "long", day: "numeric", month: "long", year: "numeric" }))}</span>
+      <span class="sp"></span>
+      <button class="btn" id="export" title="Download this day as a formatted Excel file (all departments)">${KPI.ICONS.download} Export Excel</button>
     </div>
     <div class="toolbar">
       <nav class="dtabs" aria-label="Department">${["", ...depts].map((d) => {
@@ -306,6 +308,28 @@ function viewEntry() {
   v.querySelector(".dtabs").onclick = (e) => { const b = e.target.closest("[data-d]"); if (b) { deptFilter = b.dataset.d; viewEntry(); } };
   const mem = document.getElementById("members");
   if (mem) mem.onchange = () => { onlyMembers = mem.checked; viewEntry(); };
+
+  // Excel export of the whole day (every department, whatever tab is open), laid out like the sheet:
+  // Dept / Machine / Task / Unit, then one column per person, row totals and "Tasks filled".
+  // The file can be pasted back in: its names row and task columns match what paste expects.
+  document.getElementById("export").onclick = async () => {
+    const btn = document.getElementById("export");
+    if (Object.values(entryEdits).some((t) => Number.isNaN(KPI.parseQty(t)))) return toast("Fix the red boxes first — use numbers only", true);
+    btn.disabled = true;
+    try {
+      await loadScript("https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js", "ExcelJS");
+      const allJobs = data.jobs.filter((j) => (j.active && depts.includes(j.department)) || used(j.id));
+      const cols = data.employees.filter((e) => e.active || allJobs.some((j) => KPI.parseQty(text(key(j.id, e.name))) > 0));
+      const unsaved = changes().out.length;
+      const blob = await dayWorkbook(entryDay, allJobs, cols, (j, e) => KPI.parseQty(text(key(j.id, e.name))) || null);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = `Production ${entryDay}.xlsx`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      toast(`Downloaded ${a.download}${unsaved ? " — includes your unsaved changes" : ""}`);
+    } catch (e) { toast("Export failed: " + e.message, true); }
+    btn.disabled = false;
+  };
 
   // What changed compared with what is saved (all edits, including rows hidden by the filter)
   const changes = () => {
@@ -449,6 +473,100 @@ function viewEntry() {
   };
   document.getElementById("save").onclick = save;
   document.onkeydown = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); save(); } };
+}
+
+// Loads a library from the CDN the first time it's needed.
+function loadScript(src, globalName) {
+  if (window[globalName]) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = () => res();
+    s.onerror = () => { s.remove(); rej(new Error("could not load the Excel library — check the internet connection")); };
+    document.head.appendChild(s);
+  });
+}
+
+// Department colours of the light theme (--dept-1 … --dept-8 in assets/style.css), for a white Excel sheet.
+const XL_DEPT = ["2A78D6", "1BAF7A", "4A3AA7", "E87BA4", "EB6834", "008300", "EDA100", "E34948"];
+// One day as a formatted .xlsx Blob. val(job, person) = the count or null.
+async function dayWorkbook(day, jobs, people, val) {
+  const [y, m, d] = day.split("-").map(Number);
+  const wb = new ExcelJS.Workbook();
+  wb.creator = CFG.COMPANY_NAME;
+  const ws = wb.addWorksheet(`${d}-${m}-${y}`, {
+    views: [{ state: "frozen", xSplit: 4, ySplit: 4 }],
+    pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+  });
+  const P = 5, TOT = P + people.length;               // first person column, total column
+  const L = (c) => ws.getColumn(c).letter;
+  const argb = (hex) => ({ argb: "FF" + hex });
+  const fill = (hex) => ({ type: "pattern", pattern: "solid", fgColor: argb(hex) });
+  const tint = (hex, a) => hex.match(/../g).map((h) => Math.round(255 - (255 - parseInt(h, 16)) * a).toString(16).padStart(2, "0")).join("").toUpperCase();
+  const line = { style: "thin", color: argb("D9DEE7") };
+  const box = (cell) => { cell.border = { top: line, left: line, bottom: line, right: line }; };
+  const unitFmt = (u) => `#,##0 "${u.replace(/"/g, "")}";-#,##0;""`;
+  ws.columns = [12, 14, 22, 9, ...people.map(() => 11), 16].map((width) => ({ width }));
+
+  ws.getCell(1, 1).value = `${CFG.COMPANY_NAME} — daily counts`;
+  ws.getCell(1, 1).font = { bold: true, size: 14 };
+  ws.getCell(2, 1).value = KPI.fmtDate(day, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  ws.getCell(2, 1).font = { size: 11, color: argb("4B5563") };
+
+  const hdr = ws.getRow(4);
+  hdr.values = ["Dept", "Machine", "Task", "Unit", ...people.map((p) => p.name), "Total"];
+  hdr.height = 22;
+  for (let c = 1; c <= TOT; c++) {
+    const cell = hdr.getCell(c);
+    cell.font = { bold: true, color: argb("FFFFFF") }; cell.fill = fill("1F2937"); box(cell);
+    cell.alignment = { vertical: "middle", horizontal: c < P ? "left" : c === TOT ? "right" : "center" };
+  }
+
+  let r = 5, dept = null;
+  for (const j of jobs) {
+    if (j.department !== dept) {                       // department band, like the sheet's Dept column
+      dept = j.department;
+      const i = KPI.deptNames(data).indexOf(dept), col = i < 0 ? "6B7280" : XL_DEPT[i % 8];
+      const band = ws.getRow(r++);
+      band.height = 20;
+      band.getCell(1).value = dept;
+      band.getCell(1).font = { bold: true, color: argb(col) };
+      for (let c = 1; c <= TOT; c++) { band.getCell(c).fill = fill(tint(col, 0.16)); box(band.getCell(c)); }
+    }
+    const row = ws.getRow(r);
+    row.getCell(2).value = j.machine || null;
+    row.getCell(3).value = j.name + (j.active ? "" : " (removed)");
+    row.getCell(4).value = j.unit;
+    row.getCell(2).font = row.getCell(4).font = { color: argb("6B7280") };
+    let sum = 0;
+    people.forEach((p, k) => {
+      const cell = row.getCell(P + k), q = val(j, p);
+      if (q != null) { cell.value = q; sum += q; }
+      cell.numFmt = "#,##0";
+      if (!p.departments.includes(j.department)) cell.fill = fill("F3F4F6");   // not their department (hatched on screen)
+    });
+    const t = row.getCell(TOT);
+    t.value = { formula: `SUM(${L(P)}${r}:${L(TOT - 1)}${r})`, result: sum };
+    t.numFmt = unitFmt(j.unit); t.font = { bold: true };
+    for (let c = 1; c <= TOT; c++) box(row.getCell(c));
+    r++;
+  }
+
+  const foot = ws.getRow(r);
+  foot.getCell(3).value = "Tasks filled";
+  people.forEach((p, k) => {
+    const c = P + k;
+    foot.getCell(c).value = { formula: `COUNT(${L(c)}5:${L(c)}${r - 1})`, result: jobs.filter((j) => val(j, p) != null).length };
+    foot.getCell(c).numFmt = `0;-0;"–"`;
+  });
+  for (let c = 1; c <= TOT; c++) {
+    const cell = foot.getCell(c);
+    cell.font = { bold: true, color: argb("374151") }; cell.fill = fill("E5E7EB");
+    cell.border = { top: { style: "medium", color: argb("9CA3AF") }, left: line, bottom: line, right: line };
+    if (c >= P) cell.alignment = { horizontal: "center" };
+  }
+
+  const buf = await wb.xlsx.writeBuffer();
+  return new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 }
 
 // ───────── jobs ─────────
