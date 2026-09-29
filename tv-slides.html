@@ -112,12 +112,12 @@ function overview(people, data, day) {
         <div class="dtrend-n"><span class="dept-dot" style="background:${KPI.deptColor(d.name)}"></span>${esc(d.name)}</div>
         <div class="dtrend-c">${KPI.trendChart(KPI.deptSeries(data, d.name, day, 20), { mini: true, color: KPI.deptColor(d.name) })}</div>
         <div class="dtrend-v">${d.total == null ? "–" : fmtNum(d.total)}<small>${esc(d.unit)} ${esc(on)}</small></div></div>`).join("")}</div></div>
-    <div class="card panel"><div class="card-h"><h2 class="card-title" style="display:flex;align-items:center;gap:.5rem">${ICONS.trophy} Top performers ${on}</h2><span class="card-sub">vs the average on the same job</span></div>
+    <div class="card panel"><div class="card-h"><h2 class="card-title" style="display:flex;align-items:center;gap:.5rem">${ICONS.trophy} Top performers ${on}</h2><span class="card-sub">vs the average on the same task</span></div>
       <div class="lb">${top.length ? top.map(({ p, t }, i) => {
         const s = status(t.ratio);
         return `<div class="lb-row"><div class="lb-rank ${i === 0 ? "r1" : ""}">${i + 1}</div>${KPI.avatar(p, { size: "3.4rem", ring: s.key })}
           <div class="lb-name">${esc(p.name)}<small title="${esc(t.dept)}"><span class="dept-dot" style="background:${KPI.deptColor(t.dept)}"></span>${esc(t.label)}</small></div>
-          <div class="lb-val">${fmtFull(t.qty)}<small>${esc(t.unit)}</small><em class="st-${s.key}">${esc(t.n > 1 ? KPI.vsAvg(t.ratio) : "only one on this job")}</em></div></div>`;
+          <div class="lb-val">${fmtFull(t.qty)}<small>${esc(t.unit)}</small><em class="st-${s.key}">${esc(t.n > 1 ? KPI.vsAvg(t.ratio) : "only one on this task")}</em></div></div>`;
       }).join("") : '<div class="empty">No counts yet for this day</div>'}</div></div>
   </div>`;
 }

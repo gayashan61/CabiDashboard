@@ -465,7 +465,7 @@
       const todayRows = p.today.parts.length ? p.today.parts.map((t) => {
         const s = status(t.ratio);
         return `<div><div class="task-h"><span title="${esc(t.dept)}"><span class="dept-dot" style="background:${KPI.deptColor(t.dept)}"></span>${esc(t.label)}</span><span><b>${fmtFull(t.qty)}</b> <span class="of">${esc(t.unit)}</span>&nbsp; ${KPI.pill(t.ratio, t.n > 1 ? vsAvg(t.ratio) : "only one")}</span></div>
-          <div class="bar" title="Average of the ${t.n} ${t.n === 1 ? "person" : "people"} on this job: ${fmtFull(t.avg)} ${esc(t.unit)}"><span class="bg-${s.key}" style="width:${ratioW(t.ratio)}%"></span><i class="tgt" style="left:${AVG_TICK}%"></i></div></div>`;
+          <div class="bar" title="Average of the ${t.n} ${t.n === 1 ? "person" : "people"} on this task: ${fmtFull(t.avg)} ${esc(t.unit)}"><span class="bg-${s.key}" style="width:${ratioW(t.ratio)}%"></span><i class="tgt" style="left:${AVG_TICK}%"></i></div></div>`;
       }).join("") : `<div class="empty" style="text-align:left;padding:1rem 0">No count recorded for this day yet.</div>`;
       const trend = KPI.empJobSeries(data, p.name, cj, day, 20);
       const per = KPI.PERIODS[period] ? period : "daily";
@@ -481,7 +481,7 @@
           <div class="c7-d">${esc(t.label)}</div></div>`;
       }).join("");
       const seg = Object.entries(KPI.PERIODS).map(([k, v]) => `<button type="button" data-period="${k}" class="${k === per ? "on" : ""}" aria-pressed="${k === per}">${v.label}</button>`).join("");
-      const chips = choices.length > 1 ? `<div class="pseg" role="group" aria-label="Job">${choices.map((id) => { const j = data.jobById[id]; return `<button type="button" data-pjob="${id}" data-person="${esc(p.name)}" class="${id === cj ? "on" : ""}" aria-pressed="${id === cj}" title="${esc(j.department)}"><span class="dept-dot" style="background:${KPI.deptColor(j.department)}"></span>${esc(KPI.jobLabel(j))}</button>`; }).join("")}</div>` : "";
+      const chips = choices.length > 1 ? `<div class="pseg" role="group" aria-label="Task">${choices.map((id) => { const j = data.jobById[id]; return `<button type="button" data-pjob="${id}" data-person="${esc(p.name)}" class="${id === cj ? "on" : ""}" aria-pressed="${id === cj}" title="${esc(j.department)}"><span class="dept-dot" style="background:${KPI.deptColor(j.department)}"></span>${esc(KPI.jobLabel(j))}</button>`; }).join("")}</div>` : "";
       const best = Math.max(...trend.slice(-7).map((t) => t.v ?? -1));
       return `
         <div class="card ps-head" style="--dc:${KPI.deptColor(p.department)}">
@@ -490,7 +490,7 @@
           <div class="ps-mini"><div>7-day avg<b>${fmtNum(KPI.weekAvg(data, p.name, cj, day))}</b></div><div>Best day<b>${best < 0 ? "–" : fmtNum(best)}</b></div><div>Days worked<b>${p.daysWorked}</b></div></div>
           <div class="ps-score"><div class="big st-${st.key}">${p.mainPart ? fmtFull(p.mainPart.qty) : "–"}<small>${p.mainPart ? esc(p.mainPart.unit) : ""}</small></div>${KPI.pill(p.today.index, p.mainPart ? `${st.label} · ${p.mainPart.label}` : "No entry yet")}</div>
         </div>
-        <div class="card panel"><div class="card-h"><h2 class="card-title">${day === todayKey() ? "Today's count" : "Count · " + esc(fmtDate(day))}</h2><span class="card-sub">tick = average of everyone on that job</span></div><div class="tasks">${todayRows}</div>
+        <div class="card panel"><div class="card-h"><h2 class="card-title">${day === todayKey() ? "Today's count" : "Count · " + esc(fmtDate(day))}</h2><span class="card-sub">tick = average of everyone on that task</span></div><div class="tasks">${todayRows}</div>
           <div class="card-h" style="margin-top:1.6rem"><h2 class="card-title">Trend <span class="card-sub">· ${esc(jobName)} · last 20 working days</span></h2></div>
           <div class="chart-fill">${KPI.trendChart(trend, { values: "last", xLabels: 5, color, ref: mean(trend.map((t) => t.v).filter((v) => v != null)), refLabel: "avg" })}</div></div>
         <div class="card panel"><div class="card-h"><h2 class="card-title">${KPI.PERIODS[per].title} <span class="card-sub">· ${KPI.PERIODS[per].sub}${unit ? " · " + esc(unit) : ""}</span></h2><div class="pbtns">${chips}<div class="pseg" role="group" aria-label="Chart period">${seg}</div></div></div>

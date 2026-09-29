@@ -185,7 +185,7 @@ begin
   for r in select * from jsonb_array_elements(p_rows) loop
     q := nullif(r->>'qty', '')::numeric;
     j := (r->>'job')::int;
-    if not exists (select 1 from public.jobs where id = j) then raise exception 'A job was removed meanwhile — reload the page'; end if;
+    if not exists (select 1 from public.jobs where id = j) then raise exception 'A task was removed meanwhile — reload the page'; end if;
     if q is not null and q < 0 then raise exception 'Invalid count for %', r->>'employee'; end if;
     if q is null or q = 0 then
       delete from public.entries where date = p_date and employee = trim(r->>'employee') and job = j;
@@ -239,13 +239,13 @@ declare r jsonb; ord int := 0; jid int; keep int[] := '{}';
 begin
   if not public.is_admin() then raise exception 'Not allowed: this account is not an admin' using errcode = '42501'; end if;
   if exists (select 1 from jsonb_array_elements(p_rows) x where trim(coalesce(x->>'name', '')) = '') then
-    raise exception 'Every job needs a name';
+    raise exception 'Every task needs a name';
   end if;
   if exists (select 1 from jsonb_array_elements(p_rows) x where not exists (select 1 from public.departments d where d.name = x->>'department')) then
-    raise exception 'A job belongs to a department that does not exist';
+    raise exception 'A task belongs to a department that does not exist';
   end if;
   if (select count(distinct lower(x->>'department') || '|' || lower(trim(coalesce(x->>'machine', ''))) || '|' || lower(trim(x->>'name'))) from jsonb_array_elements(p_rows) x) <> jsonb_array_length(p_rows) then
-    raise exception 'The same job is listed twice in one department';
+    raise exception 'The same task is listed twice in one department';
   end if;
   for r in select * from jsonb_array_elements(p_rows) loop
     ord := ord + 1;

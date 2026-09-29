@@ -209,9 +209,9 @@ function shell() {
       <button class="icon-btn" id="lo" title="Log out" aria-label="Log out">${KPI.ICONS.logout}</button>
     </div></div>
     <div class="wrap" id="wrap">
-    <div class="page-h"><div><h1>Production data</h1><p>Record each person's daily counts per job, and manage departments, jobs and the team.</p></div></div>
+    <div class="page-h"><div><h1>Production data</h1><p>Record each person's daily counts per task, and manage departments, tasks and the team.</p></div></div>
     <nav class="tabs">
-      <button data-t="entry">Daily entry</button><button data-t="jobs">Jobs</button><button data-t="departments">Departments</button><button data-t="employees">Employees</button>
+      <button data-t="entry">Daily entry</button><button data-t="jobs">Tasks</button><button data-t="departments">Departments</button><button data-t="employees">Employees</button>
     </nav>
     <div id="view"></div></div>`;
   document.getElementById("lo").onclick = () => logout();
@@ -271,14 +271,14 @@ function viewEntry() {
       ${deptFilter ? `<label class="hint"><input type="checkbox" id="members" ${onlyMembers ? "checked" : ""}> Only people in ${esc(deptFilter)}</label>` : ""}
       <select id="dept"><option value="">All departments</option>${depts.map((d) => `<option ${d === deptFilter ? "selected" : ""}>${esc(d)}</option>`).join("")}</select>
     </div>
-    <p class="hint">Type each person's count in the row of the job they did, like the Excel sheet. Sums like <b>1500+250</b> work; leave blank for none.
+    <p class="hint">Type each person's count in the row of the task they did, like the Excel sheet. Sums like <b>1500+250</b> work; leave blank for none.
       <b>Enter</b> / arrow keys move between boxes, <b>Ctrl+S</b> saves. Shaded boxes = the person isn't in that department (you can still fill them).<br>
       <b>From Excel:</b> copy the day's sheet from the <i>Dept</i> / names row down, click any box and paste — every count lands in the right place.</p>
     ${jobs.length && people.length ? `<div class="eg-wrap"><table class="eg" id="eg">
-      <thead><tr><th class="c-job">Job</th><th class="c-unit">Unit</th>${people.map((e) => `<th class="c-p" title="${esc(e.departments.join(", "))}">${esc(e.name)}</th>`).join("")}<th class="c-tot">Total</th></tr></thead>
+      <thead><tr><th class="c-job">Task</th><th class="c-unit">Unit</th>${people.map((e) => `<th class="c-p" title="${esc(e.departments.join(", "))}">${esc(e.name)}</th>`).join("")}<th class="c-tot">Total</th></tr></thead>
       <tbody>${rows}</tbody>
-      <tfoot><tr><th class="c-job">Jobs filled</th><td class="c-unit"></td>${people.map(() => "<td></td>").join("")}<td class="c-tot"></td></tr></tfoot>
-    </table></div>` : `<p class="hint">${jobs.length ? "No active employees — add them in the Employees tab." : "No jobs yet — add them in the Jobs tab."}</p>`}
+      <tfoot><tr><th class="c-job">Tasks filled</th><td class="c-unit"></td>${people.map(() => "<td></td>").join("")}<td class="c-tot"></td></tr></tfoot>
+    </table></div>` : `<p class="hint">${jobs.length ? "No active employees — add them in the Employees tab." : "No tasks yet — add them in the Tasks tab."}</p>`}
     <div class="savebar"><button class="btn primary" id="save" disabled>Save changes</button><span class="hint" id="chg">No changes</span></div>`;
 
   const setDay = (d) => { if (dirty && !confirm("Discard unsaved changes?")) return; dirty = false; entryEdits = {}; entryDay = d > KPI.todayKey() ? KPI.todayKey() : d; viewEntry(); };
@@ -398,7 +398,7 @@ function viewEntry() {
       const [a, b, c] = [0, 1, 2].map((x) => (row[x] || "").trim());
       if (a) dept = a;
       const hasVals = colName.some((nm, idx) => nm && (row[idx] || "").trim());
-      if (!c) { if (hasVals) missing.push([a, b].filter(Boolean).join(" ") || "a row without a job name"); continue; }
+      if (!c) { if (hasVals) missing.push([a, b].filter(Boolean).join(" ") || "a row without a task name"); continue; }
       const job = findJob(dept, b, c);
       if (!job) { if (hasVals) missing.push([dept, b, c].filter(Boolean).join(" ")); continue; }
       colName.forEach((nm, idx) => {
@@ -409,7 +409,7 @@ function viewEntry() {
       });
     }
     viewEntry();
-    const warn = [missing.length && `rows not found in Jobs: ${missing.join(", ")}`, unknown.length && `not in Employees: ${unknown.join(", ")}`].filter(Boolean).join(" · ");
+    const warn = [missing.length && `rows not found in Tasks: ${missing.join(", ")}`, unknown.length && `not in Employees: ${unknown.join(", ")}`].filter(Boolean).join(" · ");
     toast(`Pasted the sheet — ${n} count${n === 1 ? "" : "s"} filled in. Check and click Save.${warn ? " Skipped " + warn : ""}`, !!warn);
   }
   refresh();
@@ -437,18 +437,18 @@ function viewJobs() {
   const row = (j = {}) => `<tr data-id="${j.id ?? ""}" data-n="${counts[j.id] || 0}">
     <td><div class="ord"><button type="button" class="icon-btn up" title="Move up" aria-label="Move up">${KPI.ICONS.chevU}</button><button type="button" class="icon-btn dn" title="Move down" aria-label="Move down">${KPI.ICONS.chevD}</button></div></td>
     <td><input class="mc" value="${esc(j.machine || "")}" placeholder="—" aria-label="Machine or type (optional)"></td>
-    <td><input class="nm" value="${esc(j.name || "")}" placeholder="Job name" aria-label="Job name"></td>
+    <td><input class="nm" value="${esc(j.name || "")}" placeholder="Task name" aria-label="Task name"></td>
     <td><input class="un" value="${esc(j.unit || "")}" placeholder="pcs" aria-label="Unit"></td>
     <td><button type="button" class="btn danger del">${KPI.ICONS.trash} Remove</button></td></tr>`;
   v.innerHTML = `<p class="hint">These are the rows of the <b>Daily entry</b> sheet, in the same order. <b>Machine / type</b> is optional (RT1, Collator 2 …).
-    Each job has its own <b>unit</b>: people are compared with others who did the same job that day, and a department's total on the TV adds up the jobs counted in the department's unit (set in the Departments tab).
-    Removing a job hides it; its past counts stay saved, and adding it back with the same name brings them back.</p>
+    Each task has its own <b>unit</b>: people are compared with others who did the same task that day, and a department's total on the TV adds up the tasks counted in the department's unit (set in the Departments tab).
+    Removing a task hides it; its past counts stay saved, and adding it back with the same name brings them back.</p>
     ${data.departments.map((d) => `<div class="card tcard jobs-card" data-dept="${esc(d.name)}">
       <div class="jobs-h">${dot(d.name)}<b>${esc(d.name)}</b><span class="hint">department total counts <b>${esc(d.unit)}</b></span></div>
-      <table class="t job-table"><thead><tr><th style="width:92px">Order</th><th style="width:26%">Machine / type</th><th>Job</th><th style="width:150px">Unit</th><th style="width:110px"></th></tr></thead>
+      <table class="t job-table"><thead><tr><th style="width:92px">Order</th><th style="width:26%">Machine / type</th><th>Task</th><th style="width:150px">Unit</th><th style="width:110px"></th></tr></thead>
       <tbody>${data.jobs.filter((j) => j.active && j.department === d.name).map(row).join("")}</tbody></table>
-      <div class="jobs-add"><button type="button" class="btn add">+ Add job to ${esc(d.name)}</button></div></div>`).join("") || '<p class="hint">Add a department first in the Departments tab.</p>'}
-    <div class="savebar"><button class="btn primary" id="save">Save jobs</button><span class="hint" id="chg"></span></div>`;
+      <div class="jobs-add"><button type="button" class="btn add">+ Add task to ${esc(d.name)}</button></div></div>`).join("") || '<p class="hint">Add a department first in the Departments tab.</p>'}
+    <div class="savebar"><button class="btn primary" id="save">Save tasks</button><span class="hint" id="chg"></span></div>`;
   const mark = () => { dirty = true; document.getElementById("chg").textContent = "Unsaved changes"; };
 
   v.querySelectorAll(".jobs-card").forEach((card) => {
@@ -473,13 +473,13 @@ function viewJobs() {
       const seen = new Set();
       for (const tr of card.querySelectorAll("tbody tr")) {
         const r = { id: tr.dataset.id ? Number(tr.dataset.id) : undefined, department: card.dataset.dept, machine: tr.querySelector(".mc").value.trim(), name: tr.querySelector(".nm").value.trim(), unit: tr.querySelector(".un").value.trim() || "pcs" };
-        if (!r.name) { tr.querySelector(".nm").focus(); return toast(`${card.dataset.dept}: a job needs a name`, true); }
+        if (!r.name) { tr.querySelector(".nm").focus(); return toast(`${card.dataset.dept}: a task needs a name`, true); }
         const k = (r.machine + "|" + r.name).toLowerCase();
         if (seen.has(k)) return toast(`${card.dataset.dept}: “${KPI.jobLabel(r)}” is listed twice`, true);
         seen.add(k); rows.push(r);
       }
     }
-    try { await KPI.saveJobs(rows); await reloadData(); dirty = false; toast("Jobs saved"); viewJobs(); }
+    try { await KPI.saveJobs(rows); await reloadData(); dirty = false; toast("Tasks saved"); viewJobs(); }
     catch (e) { failed(e); }
   };
 }
@@ -489,9 +489,9 @@ function viewJobs() {
 function viewDepartments() {
   const v = document.getElementById("view");
   const members = (d) => data.employees.filter((e) => e.departments.includes(d)).map((e) => e.name);
-  v.innerHTML = `<p class="hint">Departments group the jobs (Jobs tab) and the people. <b>Unit</b> is what the department's total on the TV counts: it adds up the department's jobs counted in that unit (for example <i>sheets</i>); jobs in other units are shown next to it.
-    The order here is the order on the TV screens and sets each department's colour. Renaming keeps its jobs, history and people.
-    Removing a department takes it off everyone's list and hides its jobs; their past counts stay saved.</p>
+  v.innerHTML = `<p class="hint">Departments group the tasks (Tasks tab) and the people. <b>Unit</b> is what the department's total on the TV counts: it adds up the department's tasks counted in that unit (for example <i>sheets</i>); tasks in other units are shown next to it.
+    The order here is the order on the TV screens and sets each department's colour. Renaming keeps its tasks, history and people.
+    Removing a department takes it off everyone's list and hides its tasks; their past counts stay saved.</p>
     <div class="card tcard"><table class="t dept-table"><thead><tr><th style="width:92px">Order</th><th>Department</th><th style="width:180px">Total counts</th><th>People</th><th style="width:110px"></th></tr></thead>
     <tbody id="tb">${data.departments.map((d) => row(d.name, d.unit, members(d.name))).join("")}</tbody></table></div>
     <div class="toolbar" style="margin-top:12px"><input id="newname" placeholder="New department name"><input id="newunit" placeholder="Unit, e.g. sheets" style="width:160px"><button class="btn" id="add">+ Add department</button></div>
