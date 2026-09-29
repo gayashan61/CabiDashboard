@@ -77,6 +77,7 @@
   .eg .hl { background: var(--accent-soft) !important; color: var(--accent-ink) !important; }
   /* jobs tab */
   .jobs-card { margin-bottom: 16px; }
+  .jobs-card[hidden] { display: none; }
   .jobs-h { display: flex; align-items: center; gap: 8px; padding: 12px 14px; font-size: 15px; border-bottom: 1px solid var(--grid); }
   .jobs-h .hint { margin-left: auto; }
   .jobs-add { padding: 10px 14px; border-top: 1px solid var(--grid); }
@@ -253,6 +254,7 @@ let tab = "entry";
 let entryDay = KPI.todayKey();
 let deptFilter = "";
 let onlyMembers = true;  // with a department chosen: only its people as columns
+let tasksDept = "";      // Tasks tab: the department whose tasks are shown
 let entryEdits = {};     // daily entry: "jobId|name" ➜ typed text, until saved
 let dirty = false;
 // Phones and tablets get the entry as cards (one per task) instead of the wide sheet
@@ -748,6 +750,7 @@ async function dayWorkbook(day, jobs, people, val) {
 // The rows of the daily sheet, per department: optional machine / type, the job, and the unit it is counted in.
 function viewJobs() {
   const v = document.getElementById("view");
+  if (!data.departments.some((d) => d.name === tasksDept)) tasksDept = data.departments[0]?.name || "";
   const counts = {};
   data.entries.forEach((e) => { counts[e.job] = (counts[e.job] || 0) + 1; });
   const row = (j = {}) => `<tr data-id="${j.id ?? ""}" data-n="${counts[j.id] || 0}">
@@ -759,13 +762,29 @@ function viewJobs() {
   v.innerHTML = `<p class="hint">These are the rows of the <b>Daily entry</b> sheet, in the same order. <b>Machine / type</b> is optional (RT1, Collator 2 …).
     Each task has its own <b>unit</b>: people are compared with others who did the same task that day, and a department's total on the TV adds up the tasks counted in the department's unit (set in the Departments tab).
     Removing a task hides it; its past counts stay saved, and adding it back with the same name brings them back.</p>
-    ${data.departments.map((d) => `<div class="card tcard jobs-card" data-dept="${esc(d.name)}">
+    ${data.departments.length ? `<div class="toolbar"><nav class="dtabs" id="jtabs" aria-label="Department">${data.departments.map((d) =>
+      `<button type="button" data-d="${esc(d.name)}" class="${d.name === tasksDept ? "on" : ""}" aria-pressed="${d.name === tasksDept}">${dot(d.name)}${esc(d.name)}<span class="n"></span></button>`).join("")}</nav></div>` : ""}
+    ${data.departments.map((d) => `<div class="card tcard jobs-card" data-dept="${esc(d.name)}" ${d.name === tasksDept ? "" : "hidden"}>
       <div class="jobs-h">${dot(d.name)}<b>${esc(d.name)}</b><span class="hint">department total counts <b>${esc(d.unit)}</b></span></div>
       <table class="t job-table"><thead><tr><th style="width:92px">Order</th><th style="width:26%">Machine / type</th><th>Task</th><th style="width:150px">Unit</th><th style="width:110px"></th></tr></thead>
       <tbody>${data.jobs.filter((j) => j.active && j.department === d.name).map(row).join("")}</tbody></table>
       <div class="jobs-add"><button type="button" class="btn add">+ Add task to ${esc(d.name)}</button></div></div>`).join("") || '<p class="hint">Add a department first in the Departments tab.</p>'}
     <div class="savebar"><button class="btn primary" id="save">Save tasks</button><span class="hint" id="chg"></span></div>`;
-  const mark = () => { dirty = true; document.getElementById("chg").textContent = "Unsaved changes"; };
+  const mark = () => { dirty = true; document.getElementById("chg").textContent = "Unsaved changes"; countTasks(); };
+  // One department at a time, picked with the tabs; the others stay on the page (hidden), so edits in every tab are saved together
+  const cardOf = (d) => [...v.querySelectorAll(".jobs-card")].find((c) => c.dataset.dept === d);
+  const show = (d) => {
+    tasksDept = d;
+    v.querySelectorAll(".jobs-card").forEach((c) => { c.hidden = c.dataset.dept !== d; });
+    v.querySelectorAll("#jtabs [data-d]").forEach((b) => { b.classList.toggle("on", b.dataset.d === d); b.setAttribute("aria-pressed", b.dataset.d === d); });
+    if (NARROW.matches) v.querySelector("#jtabs .on")?.scrollIntoView({ block: "nearest", inline: "center" });
+  };
+  const countTasks = () => v.querySelectorAll("#jtabs [data-d]").forEach((b) => {
+    const n = cardOf(b.dataset.d).querySelectorAll("tbody tr").length;
+    b.querySelector(".n").textContent = n; b.title = `${n} task${n === 1 ? "" : "s"}`;
+  });
+  v.querySelector("#jtabs")?.addEventListener("click", (e) => { const b = e.target.closest("[data-d]"); if (b) show(b.dataset.d); });
+  countTasks();
 
   v.querySelectorAll(".jobs-card").forEach((card) => {
     const tb = card.querySelector("tbody");
@@ -789,9 +808,9 @@ function viewJobs() {
       const seen = new Set();
       for (const tr of card.querySelectorAll("tbody tr")) {
         const r = { id: tr.dataset.id ? Number(tr.dataset.id) : undefined, department: card.dataset.dept, machine: tr.querySelector(".mc").value.trim(), name: tr.querySelector(".nm").value.trim(), unit: tr.querySelector(".un").value.trim() || "pcs" };
-        if (!r.name) { tr.querySelector(".nm").focus(); return toast(`${card.dataset.dept}: a task needs a name`, true); }
+        if (!r.name) { show(card.dataset.dept); tr.querySelector(".nm").focus(); return toast(`${card.dataset.dept}: a task needs a name`, true); }
         const k = (r.machine + "|" + r.name).toLowerCase();
-        if (seen.has(k)) return toast(`${card.dataset.dept}: “${KPI.jobLabel(r)}” is listed twice`, true);
+        if (seen.has(k)) { show(card.dataset.dept); tr.querySelector(".nm").focus(); return toast(`${card.dataset.dept}: “${KPI.jobLabel(r)}” is listed twice`, true); }
         seen.add(k); rows.push(r);
       }
     }
