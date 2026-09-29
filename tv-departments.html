@@ -53,7 +53,7 @@ document.getElementById("legend").innerHTML =
   `${KPI.pill(CFG.THRESHOLDS.good / 100, `Above avg ≥ ${CFG.THRESHOLDS.good}%`)}
    ${KPI.pill(CFG.THRESHOLDS.warning / 100, `Near avg ${CFG.THRESHOLDS.warning}–${CFG.THRESHOLDS.good - 1}%`)}
    ${KPI.pill(0, `Below avg < ${CFG.THRESHOLDS.warning}%`)}
-   <span class="legend-item">Ranked by today's count · tick on each bar = the department average · bars stop at 150%</span>`;
+   <span class="legend-item">Ranked against the average of everyone on the same job today · tick on each bar = that average · bars stop at 150%</span>`;
 
 KPI.autoRefresh((data) => {
   const day = KPI.displayDay(data);
@@ -72,25 +72,28 @@ KPI.autoRefresh((data) => {
     const above = g.people.filter((p) => p.dept && p.dept.ratio >= CFG.THRESHOLDS.good / 100).length;
     const color = KPI.deptColor(g.name);
     const weekPill = vsWeek == null ? KPI.pill(null) : KPI.pill(vsWeek, KPI.vsAvg(vsWeek).replace("vs avg", "vs 7-day").replace("at avg", "= 7-day avg"));
+    const others = dd.others.map((o) => `+ <b>${fmtNum(o.total)}</b> ${esc(o.unit)}`).join("<br>");
     return `<section class="card col" style="--dc:${color}">
       <div class="col-head">
         <div class="col-top"><div class="col-name"><span class="dept-dot" style="background:${color}"></span>${esc(g.name)}</div>${weekPill}</div>
         <div class="col-stats"><div class="col-avg">${dd.total == null ? "–" : fmtNum(dd.total)}<i>${esc(unit)}</i><small>Total ${esc(KPI.dayWord(day))}</small></div>
-          <div class="col-meta">avg <b>${fmtNum(dd.avg)}</b> per person<br><b>${dd.n}</b> of ${g.people.length} logged${dd.n ? ` · <b>${above}</b> above avg` : ""}</div></div>
-        <div class="col-trend" title="Daily total, last 12 working days">${KPI.trendChart(KPI.deptSeries(data, g.name, day, 12), { mini: true, color })}</div>
+          <div class="col-meta">${others ? others + "<br>" : ""}<b>${dd.n}</b> of ${g.people.length} logged${dd.n ? ` · <b>${above}</b> above avg` : ""}</div></div>
+        <div class="col-trend" title="Daily total in ${esc(unit)}, last 12 working days">${KPI.trendChart(KPI.deptSeries(data, g.name, day, 12), { mini: true, color })}</div>
       </div>
       <div class="rows">${g.people.map((p, i) => {
         const x = p.dept;
         const s = status(x ? x.ratio : null);
+        // under the name: the jobs they did here today, else the other departments they work in
         const others = p.departments.filter((d) => d !== g.name);
-        const also = others.length ? `<small title="${esc(p.name)} also works in ${esc(others.join(", "))}">also ${others.map((d) => `<span class="dept-dot" style="background:${KPI.deptColor(d)}"></span>${esc(d)}`).join(", ")}</small>` : "";
+        const sub = x ? `<small title="${esc(x.parts.map((t) => `${t.label}: ${fmtFull(t.qty)} ${t.unit}`).join("\n"))}">${esc(x.parts.map((t) => t.label).join(" · "))}</small>`
+          : others.length ? `<small title="${esc(p.name)} also works in ${esc(others.join(", "))}">also ${others.map((d) => `<span class="dept-dot" style="background:${KPI.deptColor(d)}"></span>${esc(d)}`).join(", ")}</small>` : "";
         return `<div class="row">
           <div class="rank ${i === 0 && x ? "r1" : ""}">${x ? i + 1 : "–"}</div>
           ${KPI.avatar(p, { cls: "md", ring: s.key })}
-          <div class="rname">${esc(p.name)}${also}</div>
-          <div class="rscore ${x ? "st st-" + s.key : "muted"}" title="${x ? esc(KPI.vsAvg(x.ratio)) : ""}">${x ? `${s.icon}${fmtFull(x.qty)}<small>${esc(unit)}</small>` : '<span style="font-size:0.9rem;font-weight:500">No entry</span>'}</div>
+          <div class="rname">${esc(p.name)}${sub}</div>
+          <div class="rscore ${x ? "st st-" + s.key : "muted"}" title="${x ? esc(KPI.vsAvg(x.ratio)) : ""}">${x ? `${s.icon}${fmtFull(x.top.qty)}<small>${esc(x.top.unit)}</small>` : '<span style="font-size:0.9rem;font-weight:500">No entry</span>'}</div>
           <div class="rbar"><div class="bar"><span class="bg-${s.key}" style="width:${KPI.ratioW(x ? x.ratio : null)}%"></span><i class="tgt" style="left:${KPI.AVG_TICK}%"></i></div></div>
-          <div class="ravg">7d avg ${fmtNum(p.deptWeekAvg)}</div>
+          <div class="ravg">${x ? `7d avg ${fmtNum(p.deptWeekAvg)}` : ""}</div>
         </div>`;
       }).join("")}</div>
     </section>`;

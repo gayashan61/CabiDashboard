@@ -1,6 +1,7 @@
 // Shared data layer + calculations for all pages.
-// Data lives in Supabase: each person enters one count per department per day (sheets, sets, packs …).
-// Colours compare a person's count with the average of everyone in that department on the same day.
+// Data lives in Supabase: like the client's daily sheet, each person gets a count per job per day
+// (department ➜ machine ➜ job, e.g. Sheets ➜ RT1 ➜ Blank, each job in its own unit).
+// Colours compare a person's count with the average of everyone who did the same job that day.
 (function () {
   const CFG = window.KPI_CONFIG;
 
@@ -46,7 +47,7 @@
   // Period of the profile bar chart (daily / weekly / monthly / yearly), remembered per viewer.
   let period = "daily";
   try { period = localStorage.getItem("kpi_period") || "daily"; } catch (e) {}
-  const chartDept = {};   // person ➜ department their profile charts show (people in several departments)
+  const chartJob = {};    // person ➜ job id their profile charts show (people who do several jobs)
   let deptOrder = [];     // department names in display order (for colours)
 
   let chartId = 0;
@@ -99,7 +100,7 @@
     if (j && (j.code === "PGRST202" || /could not find the function/i.test(m))) return DB_OUTDATED;
     return m;
   }
-  const DB_OUTDATED = "The database needs updating: run supabase/migrations/2026-09-29_counts_per_department.sql and then supabase/schema.sql in the Supabase SQL Editor.";
+  const DB_OUTDATED = "The database needs updating: run supabase/migrations/2026-09-29_jobs.sql and then supabase/schema.sql in the Supabase SQL Editor.";
   async function sbFetch(path, body, { user = false } = {}) {
     if (!SB_URL || !CFG.SUPABASE_KEY) throw new Error("Supabase is not set up: fill in SUPABASE_URL and SUPABASE_KEY in assets/config.js.");
     const headers = { apikey: CFG.SUPABASE_KEY, "Content-Type": "application/json" };
@@ -121,8 +122,8 @@
   }
   const sbRpc = (fn, args, opts) => sbFetch("/rest/v1/rpc/" + fn, args, opts);
 
-  // ───────── status: count compared with the department average that day ─────────
-  // ratio 1 = exactly the department average. THRESHOLDS are in % of that average.
+  // ───────── status: count compared with the job's average that day ─────────
+  // ratio 1 = exactly the average of everyone who did that job. THRESHOLDS are in % of that average.
   function status(ratio) {
     if (ratio == null) return { key: "none", label: "No entry", icon: ICONS.dash };
     const pct = ratio * 100;
@@ -136,7 +137,7 @@
     const d = Math.round((ratio - 1) * 100);
     return d === 0 ? "at avg" : (d > 0 ? "+" : "−") + Math.abs(d) + "% vs avg";
   };
-  // Bar width for a ratio: bars run to 150% of the department average; the tick marks the average.
+  // Bar width for a ratio: bars run to 150% of the average; the tick marks the average.
   const BAR_MAX = 1.5;
   const ratioW = (r) => (r == null ? 0 : Math.min(r, BAR_MAX) / BAR_MAX * 100);
   const AVG_TICK = 100 / BAR_MAX;
@@ -147,7 +148,7 @@
 
     async load(days = 60) {
       const j = await sbRpc("get_data", { days });
-      if (!j || !Array.isArray(j.departments)) throw new Error(DB_OUTDATED); // still the old (targets) database
+      if (!j || !Array.isArray(j.jobs)) throw new Error(DB_OUTDATED); // still an older database
       return normalise(j);
     },
     // Cheap "has anything changed?" check
@@ -172,15 +173,18 @@
       sbKeep(null);
     },
 
-    // rows: [{employee, department, qty}] — qty null/'' deletes the cell
+    // rows: [{employee, job, qty}] — qty null/'' deletes the cell
     async saveEntries(date, rows) { await sbRpc("save_entries", { p_date: date, p_rows: rows }, { user: true }); },
     // rows: [{name, unit, renamedFrom?}] in display order
     async saveDepartments(rows) { await sbRpc("save_departments", { p_rows: rows }, { user: true }); },
+    // rows: [{id?, department, machine, name, unit}] in display order — jobs left out are hidden
+    async saveJobs(rows) { await sbRpc("save_jobs", { p_rows: rows }, { user: true }); },
     // rows: [{name, department ("Main, Other"), active, photo, renamedFrom?}] in display order
     async saveEmployees(rows) { await sbRpc("save_employees", { p_rows: rows }, { user: true }); },
 
-    // ───────── departments ─────────
+    // ───────── departments & jobs ─────────
     deptNames(data) { return data.departments.map((d) => d.name); },
+    // The unit a department's total counts (its jobs in other units are shown on their own)
     unit(data, dept) { return data.deptByName[dept]?.unit || "pcs"; },
     // Department colours come from theme tokens (--dept-1 … --dept-8) so they adapt to light/dark.
     deptColor(name) {
@@ -191,6 +195,8 @@
     deptLabel(p) {
       return p.departments.map((d) => `<span class="dept-lbl"><span class="dept-dot" style="background:${KPI.deptColor(d)}"></span>${esc(d)}</span>`).join("");
     },
+    // "RT1 Blank", "Printed" — the machine (if any) and the job, as on the sheet
+    jobLabel(job) { return job ? [job.machine, job.name].filter(Boolean).join(" ") : "?"; },
 
     // ───────── calculations ─────────
     displayDay(data) { return pickedDay || KPI.liveDay(data); },
@@ -210,62 +216,77 @@
       }
       return out;
     },
-    // One department on one day: total, how many people entered a count, their average.
-    deptDay(data, dept, day) {
-      const k = day + "|" + dept;
-      if (!data.deptDayCache[k]) {
-        const qs = data.byDeptDay[k] || [];
+    // One job on one day: total, how many people did it, their average.
+    jobDay(data, id, day) {
+      const k = day + "|" + id;
+      if (!data.jobDayCache[k]) {
+        const qs = data.byJobDay[k] || [];
         const total = qs.reduce((a, b) => a + b, 0);
-        data.deptDayCache[k] = { total: qs.length ? total : null, n: qs.length, avg: qs.length ? total / qs.length : null, max: qs.length ? Math.max(...qs) : null };
+        data.jobDayCache[k] = { total: qs.length ? total : null, n: qs.length, avg: qs.length ? total / qs.length : null };
       }
-      return data.deptDayCache[k];
+      return data.jobDayCache[k];
     },
-    // A person's counts for one day: [{dept, qty, unit, avg, ratio}] in their department order.
-    // index = their counts compared with each department's average (1 = average), used for colour and ranking.
+    // One department on one day: total in the department's unit, the other units' totals, people who logged.
+    deptDay(data, dept, day) {
+      const x = data.byDeptDay[day + "|" + dept];
+      const unit = KPI.unit(data, dept);
+      if (!x) return { total: null, n: 0, others: [] };
+      return {
+        total: x.units[unit] ?? null, n: x.people.size,
+        others: Object.entries(x.units).filter(([u]) => u !== unit).map(([u, total]) => ({ unit: u, total })),
+      };
+    },
+    // One person on one job on a day (null = no count that day)
+    empJobDay(data, name, id, day) {
+      const q = data.byKey[day + "|" + name]?.[id];
+      if (q == null) return null;
+      const jd = KPI.jobDay(data, id, day);
+      return { qty: q, ratio: jd.avg ? q / jd.avg : null, avg: jd.avg, n: jd.n };
+    },
+    // A person's counts for one day: [{id, dept, label, qty, unit, avg, n, ratio}] in sheet order.
+    // index = their counts compared with each job's average (1 = average), used for colour and ranking.
     empDay(data, name, day) {
       const rows = data.byKey[day + "|" + name] || {};
-      const emp = data.empByName[name];
-      const order = [...(emp?.departments || []), ...Object.keys(rows).filter((d) => !emp?.departments.includes(d))];
-      const parts = order.filter((d) => rows[d] != null).map((dept) => {
-        const dd = KPI.deptDay(data, dept, day);
-        return { dept, qty: rows[dept], unit: KPI.unit(data, dept), avg: dd.avg, ratio: dd.avg ? rows[dept] / dd.avg : null };
-      });
+      const parts = data.jobs.filter((j) => rows[j.id] != null).map((j) => ({
+        id: j.id, dept: j.department, label: KPI.jobLabel(j), unit: j.unit, ...KPI.empJobDay(data, name, j.id, day),
+      }));
       return { parts, has: parts.length > 0, index: parts.length ? mean(parts.map((p) => p.ratio ?? 1)) : null };
     },
-    // One person inside one department on a day (null = no count that day)
-    empDeptDay(data, name, dept, day) {
-      const q = data.byKey[day + "|" + name]?.[dept];
-      if (q == null) return null;
-      const dd = KPI.deptDay(data, dept, day);
-      return { qty: q, ratio: dd.avg ? q / dd.avg : null, avg: dd.avg };
-    },
     // Average count per working day over the last 7 working days (days with a count only)
-    weekAvg(data, name, dept, day) {
-      return mean(KPI.workDays(day, 7).map((d) => KPI.empDeptDay(data, name, dept, d)?.qty).filter((v) => v != null));
+    weekAvg(data, name, id, day) {
+      if (id == null) return null;
+      return mean(KPI.workDays(day, 7).map((d) => KPI.empJobDay(data, name, id, d)?.qty).filter((v) => v != null));
     },
+    // Jobs a person has done lately, most frequent first (for their profile chart)
+    recentJobs(data, name) { return data.jobsByEmp[name] || []; },
+    // Their biggest count of the day — the one shown in big numbers
+    topPart(parts) { return parts.reduce((a, b) => (!a || b.qty > a.qty ? b : a), null); },
 
     empSummary(data, emp, day) {
       const today = KPI.empDay(data, emp.name, day);
-      const days = KPI.workDays(day, 7);
-      const week = days.map((d) => KPI.empDay(data, emp.name, d));
-      // The department shown in big numbers: the first one they worked in today, else their main one
-      const main = today.parts[0]?.dept || emp.department;
+      const week = KPI.workDays(day, 7).map((d) => KPI.empDay(data, emp.name, d));
+      const mainPart = KPI.topPart(today.parts);
+      // The job their small charts follow: today's main one, else the one they do most
+      const mainJob = mainPart?.id ?? KPI.recentJobs(data, emp.name)[0] ?? null;
       return {
-        ...emp, today, main,
-        mainPart: today.parts[0] || null,
+        ...emp, today, mainPart, mainJob,
         weekIndex: mean(week.map((w) => w.index).filter((v) => v != null)),
         daysWorked: week.filter((w) => w.has).length,
-        mainWeekAvg: KPI.weekAvg(data, emp.name, main, day),
+        mainWeekAvg: KPI.weekAvg(data, emp.name, mainJob, day),
       };
     },
     summaries(data, day) {
       return data.employees.filter((e) => e.active !== false).map((e) => KPI.empSummary(data, e, day));
     },
-    // Everyone in a department, with their count that day, ranked high ➜ low
+    // Everyone in a department (or who did one of its jobs that day), best first.
+    // dept = { parts, top, ratio }: their jobs in this department, the biggest one, and the average of their ratios.
     deptPeople(data, people, dept, day) {
-      return people.filter((p) => p.departments.includes(dept) || KPI.empDeptDay(data, p.name, dept, day))
-        .map((p) => ({ ...p, dept: KPI.empDeptDay(data, p.name, dept, day), deptWeekAvg: KPI.weekAvg(data, p.name, dept, day) }))
-        .sort((a, b) => (b.dept?.qty ?? -1) - (a.dept?.qty ?? -1) || a.name.localeCompare(b.name));
+      return people.map((p) => {
+        const parts = p.today.parts.filter((t) => t.dept === dept);
+        const top = KPI.topPart(parts);
+        return { ...p, dept: parts.length ? { parts, top, ratio: mean(parts.map((t) => t.ratio ?? 1)) } : null, deptWeekAvg: top ? KPI.weekAvg(data, p.name, top.id, day) : null };
+      }).filter((p) => p.dept || p.departments.includes(dept))
+        .sort((a, b) => (b.dept?.ratio ?? -1) - (a.dept?.ratio ?? -1) || (b.dept?.top.qty ?? -1) - (a.dept?.top.qty ?? -1) || a.name.localeCompare(b.name));
     },
     // Department total for the last n working days: [{day, v}]
     deptSeries(data, dept, day, n) {
@@ -275,9 +296,9 @@
     deptWeekAvg(data, dept, day) {
       return mean(KPI.workDays(addDays(day, -1), 7).map((d) => KPI.deptDay(data, dept, d).total).filter((v) => v != null));
     },
-    // A person's count in one department for the last n working days: [{day, v, st}]
-    empDeptSeries(data, name, dept, day, n) {
-      return KPI.workDays(day, n).map((d) => { const x = KPI.empDeptDay(data, name, dept, d); return { day: d, v: x?.qty ?? null, st: x ? status(x.ratio).key : null }; });
+    // A person's count on one job for the last n working days: [{day, v, st}]
+    empJobSeries(data, name, id, day, n) {
+      return KPI.workDays(day, n).map((d) => { const x = id == null ? null : KPI.empJobDay(data, name, id, d); return { day: d, v: x?.qty ?? null, st: x ? status(x.ratio).key : null }; });
     },
 
     // ───────── profile chart periods ─────────
@@ -294,12 +315,12 @@
       try { localStorage.setItem("kpi_period", p); } catch (e) {}
       KPI.refresh();
     },
-    setChartDept(name, dept) { chartDept[name] = dept; KPI.refresh(); },
-    // Bars for the profile chart: [{ label, v, days, cur, title }] — v = total count in that bucket.
-    periodBars(data, name, dept, day, per = period) {
+    setChartJob(name, id) { chartJob[name] = id; KPI.refresh(); },
+    // Bars for the profile chart: [{ label, v, days, cur, title }] — v = total count on that job in that bucket.
+    periodBars(data, name, id, day, per = period) {
       const sum = (from, to) => {
         let v = 0, days = 0;
-        for (let d = from; d <= to && d <= day; d = addDays(d, 1)) { const x = KPI.empDeptDay(data, name, dept, d); if (x) { v += x.qty; days++; } }
+        for (let d = from; d <= to && d <= day; d = addDays(d, 1)) { const x = id == null ? null : KPI.empJobDay(data, name, id, d); if (x) { v += x.qty; days++; } }
         return { v: days ? v : null, days };
       };
       const D = parseDay(day);
@@ -433,18 +454,22 @@
     // One person's full profile: header card, today's counts + trend, and the period chart.
     // Used by the slideshow and the team grid's profile view.
     personView(p, day, data) {
-      const st = status(p.mainPart?.ratio ?? null);
-      // Department the charts show: chosen chip, else today's main one
-      const cd = p.departments.includes(chartDept[p.name]) || KPI.empDeptDay(data, p.name, chartDept[p.name], day) ? chartDept[p.name] : p.main;
-      const color = KPI.deptColor(cd), unit = KPI.unit(data, cd);
+      const st = status(p.today.index); // colour = all their jobs today against each job's average
+      // Job the charts show: chosen chip, else today's main one (or the one they do most)
+      const choices = [...new Set([...p.today.parts.map((t) => t.id), ...KPI.recentJobs(data, p.name)])].slice(0, 4);
+      const cj = data.jobById[chartJob[p.name]] ? chartJob[p.name] : p.mainJob;
+      if (cj != null && !choices.includes(cj)) choices.unshift(cj);
+      const job = data.jobById[cj];
+      const color = KPI.deptColor(job?.department), unit = job?.unit || "";
+      const jobName = job ? `${job.department} · ${KPI.jobLabel(job)}` : "no counts yet";
       const todayRows = p.today.parts.length ? p.today.parts.map((t) => {
         const s = status(t.ratio);
-        return `<div><div class="task-h"><span><span class="dept-dot" style="background:${KPI.deptColor(t.dept)}"></span>${esc(t.dept)}</span><span><b>${fmtFull(t.qty)}</b> <span class="of">${esc(t.unit)}</span>&nbsp; ${KPI.pill(t.ratio, vsAvg(t.ratio) || "only one")}</span></div>
-          <div class="bar" title="Department average ${fmtFull(t.avg)} ${esc(t.unit)}"><span class="bg-${s.key}" style="width:${ratioW(t.ratio)}%"></span><i class="tgt" style="left:${AVG_TICK}%"></i></div></div>`;
+        return `<div><div class="task-h"><span title="${esc(t.dept)}"><span class="dept-dot" style="background:${KPI.deptColor(t.dept)}"></span>${esc(t.label)}</span><span><b>${fmtFull(t.qty)}</b> <span class="of">${esc(t.unit)}</span>&nbsp; ${KPI.pill(t.ratio, t.n > 1 ? vsAvg(t.ratio) : "only one")}</span></div>
+          <div class="bar" title="Average of the ${t.n} ${t.n === 1 ? "person" : "people"} on this job: ${fmtFull(t.avg)} ${esc(t.unit)}"><span class="bg-${s.key}" style="width:${ratioW(t.ratio)}%"></span><i class="tgt" style="left:${AVG_TICK}%"></i></div></div>`;
       }).join("") : `<div class="empty" style="text-align:left;padding:1rem 0">No count recorded for this day yet.</div>`;
-      const trend = KPI.empDeptSeries(data, p.name, cd, day, 20);
+      const trend = KPI.empJobSeries(data, p.name, cj, day, 20);
       const per = KPI.PERIODS[period] ? period : "daily";
-      const bars = KPI.periodBars(data, p.name, cd, day, per);
+      const bars = KPI.periodBars(data, p.name, cj, day, per);
       const barAvg = mean(bars.map((b) => b.v).filter((v) => v != null));
       const max = Math.max(1, (barAvg || 0) * 1.25, ...bars.map((t) => (t.v || 0) * 1.18));
       const cols = bars.map((t) => {
@@ -456,21 +481,21 @@
           <div class="c7-d">${esc(t.label)}</div></div>`;
       }).join("");
       const seg = Object.entries(KPI.PERIODS).map(([k, v]) => `<button type="button" data-period="${k}" class="${k === per ? "on" : ""}" aria-pressed="${k === per}">${v.label}</button>`).join("");
-      const chips = p.departments.length > 1 ? `<div class="pseg" role="group" aria-label="Department">${p.departments.map((d) => `<button type="button" data-pdept="${esc(d)}" data-person="${esc(p.name)}" class="${d === cd ? "on" : ""}" aria-pressed="${d === cd}"><span class="dept-dot" style="background:${KPI.deptColor(d)}"></span>${esc(d)}</button>`).join("")}</div>` : "";
+      const chips = choices.length > 1 ? `<div class="pseg" role="group" aria-label="Job">${choices.map((id) => { const j = data.jobById[id]; return `<button type="button" data-pjob="${id}" data-person="${esc(p.name)}" class="${id === cj ? "on" : ""}" aria-pressed="${id === cj}" title="${esc(j.department)}"><span class="dept-dot" style="background:${KPI.deptColor(j.department)}"></span>${esc(KPI.jobLabel(j))}</button>`; }).join("")}</div>` : "";
       const best = Math.max(...trend.slice(-7).map((t) => t.v ?? -1));
       return `
         <div class="card ps-head" style="--dc:${KPI.deptColor(p.department)}">
           ${KPI.avatar(p, { cls: "xl", ring: st.key })}
           <div class="ps-id"><div class="ps-name">${esc(p.name)}</div><div class="ps-dept">${KPI.deptLabel(p)}</div></div>
-          <div class="ps-mini"><div>7-day avg<b>${fmtNum(KPI.weekAvg(data, p.name, cd, day))}</b></div><div>Best day<b>${best < 0 ? "–" : fmtNum(best)}</b></div><div>Days worked<b>${p.daysWorked}</b></div></div>
-          <div class="ps-score"><div class="big st-${st.key}">${p.mainPart ? fmtFull(p.mainPart.qty) : "–"}<small>${p.mainPart ? esc(p.mainPart.unit) : ""}</small></div>${KPI.pill(p.mainPart?.ratio ?? null, p.mainPart ? `${st.label} · ${p.mainPart.dept}` : "No entry yet")}</div>
+          <div class="ps-mini"><div>7-day avg<b>${fmtNum(KPI.weekAvg(data, p.name, cj, day))}</b></div><div>Best day<b>${best < 0 ? "–" : fmtNum(best)}</b></div><div>Days worked<b>${p.daysWorked}</b></div></div>
+          <div class="ps-score"><div class="big st-${st.key}">${p.mainPart ? fmtFull(p.mainPart.qty) : "–"}<small>${p.mainPart ? esc(p.mainPart.unit) : ""}</small></div>${KPI.pill(p.today.index, p.mainPart ? `${st.label} · ${p.mainPart.label}` : "No entry yet")}</div>
         </div>
-        <div class="card panel"><div class="card-h"><h2 class="card-title">${day === todayKey() ? "Today's count" : "Count · " + esc(fmtDate(day))}</h2><span class="card-sub">tick = department average</span></div><div class="tasks">${todayRows}</div>
-          <div class="card-h" style="margin-top:1.6rem"><h2 class="card-title">Trend <span class="card-sub">· ${esc(cd)} · last 20 working days</span></h2></div>
+        <div class="card panel"><div class="card-h"><h2 class="card-title">${day === todayKey() ? "Today's count" : "Count · " + esc(fmtDate(day))}</h2><span class="card-sub">tick = average of everyone on that job</span></div><div class="tasks">${todayRows}</div>
+          <div class="card-h" style="margin-top:1.6rem"><h2 class="card-title">Trend <span class="card-sub">· ${esc(jobName)} · last 20 working days</span></h2></div>
           <div class="chart-fill">${KPI.trendChart(trend, { values: "last", xLabels: 5, color, ref: mean(trend.map((t) => t.v).filter((v) => v != null)), refLabel: "avg" })}</div></div>
-        <div class="card panel"><div class="card-h"><h2 class="card-title">${KPI.PERIODS[per].title} <span class="card-sub">· ${KPI.PERIODS[per].sub} · ${esc(unit)}</span></h2><div class="pbtns">${chips}<div class="pseg" role="group" aria-label="Chart period">${seg}</div></div></div>
+        <div class="card panel"><div class="card-h"><h2 class="card-title">${KPI.PERIODS[per].title} <span class="card-sub">· ${KPI.PERIODS[per].sub}${unit ? " · " + esc(unit) : ""}</span></h2><div class="pbtns">${chips}<div class="pseg" role="group" aria-label="Chart period">${seg}</div></div></div>
           <div class="chart-area"><div class="cols7 n${bars.length}">${cols}</div></div>
-          <div class="note">${esc(cd)} count in ${esc(unit)}${barAvg != null ? ` · average ${fmtFull(barAvg)} per ${per === "daily" ? "day" : per.replace(/ly$/, "")}` : ""}</div></div>`;
+          <div class="note">${esc(jobName)}${unit ? ` in ${esc(unit)}` : ""}${barAvg != null ? ` · average ${fmtFull(barAvg)} per ${per === "daily" ? "day" : per.replace(/ly$/, "")}` : ""}</div></div>`;
     },
 
     // Query string for links between screens (keeps ?theme, ?kiosk, ?date …)
@@ -549,7 +574,7 @@
       // Profile chart buttons (slideshow + team grid): period, and department for people in several
       document.addEventListener("click", (e) => {
         const b = e.target.closest("[data-period]"); if (b) KPI.setPeriod(b.dataset.period);
-        const d = e.target.closest("[data-pdept]"); if (d) KPI.setChartDept(d.dataset.person, d.dataset.pdept);
+        const j = e.target.closest("[data-pjob]"); if (j) KPI.setChartJob(j.dataset.person, Number(j.dataset.pjob));
       });
     },
     setHeaderDay(day) {
@@ -684,7 +709,7 @@
     const departments = (d.departments || []).map((x) => ({ name: String(x.name).trim(), unit: String(x.unit || "pcs").trim() || "pcs" }));
     deptOrder = departments.map((x) => x.name);
     const employees = (d.employees || []).map((e) => {
-      // The department cell may list several, e.g. "TH & 2ply, Packing" — the first is the main one.
+      // The department cell may list several, e.g. "Rolls, Packing" — the first is the main one.
       const list = [...new Set(String(e.department || "").split(",").map((s) => s.trim()).filter(Boolean))];
       return {
         name: String(e.name).trim(),
@@ -694,18 +719,34 @@
         photo: /^(data:image\/(jpeg|png|webp);base64,|https:\/\/)/.test(String(e.photo || "")) ? String(e.photo) : "",
       };
     });
-    const entries = (d.entries || []).map(([date, employee, department, qty]) => ({ date, employee, department, qty: Number(qty) || 0 }));
-    const byKey = {}, byDeptDay = {}, peopleSets = {};
+    // Jobs in sheet order: by department order, then their own order (get_data sends them sorted).
+    const dIdx = (n) => { const i = deptOrder.indexOf(n); return i < 0 ? 999 : i; };
+    const jobs = (d.jobs || []).map((j, i) => ({
+      id: Number(j.id), department: String(j.department || "").trim(), machine: String(j.machine || "").trim(),
+      name: String(j.name || "").trim(), unit: String(j.unit || "pcs").trim() || "pcs", active: j.active !== false, i,
+    })).sort((a, b) => dIdx(a.department) - dIdx(b.department) || a.i - b.i);
+    const jobById = Object.fromEntries(jobs.map((j) => [j.id, j]));
+    const entries = (d.entries || []).map(([date, employee, job, qty]) => ({ date, employee, job: Number(job), qty: Number(qty) || 0 })).filter((e) => jobById[e.job]);
+    const byKey = {}, byJobDay = {}, byDeptDay = {}, peopleSets = {}, freq = {};
     entries.forEach((e) => {
-      const k = e.date + "|" + e.employee;
-      (byKey[k] = byKey[k] || {})[e.department] = e.qty;
-      (byDeptDay[e.date + "|" + e.department] = byDeptDay[e.date + "|" + e.department] || []).push(e.qty);
+      const k = e.date + "|" + e.employee, j = jobById[e.job], dk = e.date + "|" + j.department;
+      (byKey[k] = byKey[k] || {})[e.job] = e.qty;
+      (byJobDay[e.date + "|" + e.job] = byJobDay[e.date + "|" + e.job] || []).push(e.qty);
+      const dd = (byDeptDay[dk] = byDeptDay[dk] || { units: {}, people: new Set() });
+      dd.units[j.unit] = (dd.units[j.unit] || 0) + e.qty;
+      dd.people.add(e.employee);
       (peopleSets[e.date] = peopleSets[e.date] || new Set()).add(e.employee);
+      const f = ((freq[e.employee] = freq[e.employee] || {})[e.job] = freq[e.employee][e.job] || { n: 0, last: "" });
+      f.n++; if (e.date > f.last) f.last = e.date;
     });
     const peopleByDay = Object.fromEntries(Object.entries(peopleSets).map(([k, s]) => [k, s.size]));
+    // Each person's jobs, most often done first (then most recent)
+    const jobsByEmp = Object.fromEntries(Object.entries(freq).map(([name, m]) => [name,
+      Object.entries(m).sort(([, a], [, b]) => b.n - a.n || b.last.localeCompare(a.last)).map(([id]) => Number(id))]));
     return {
-      departments, employees, entries, byKey, byDeptDay, peopleByDay, deptDayCache: {}, version: d.version || null,
+      departments, jobs, employees, entries, byKey, byJobDay, byDeptDay, peopleByDay, jobsByEmp, jobDayCache: {}, version: d.version || null,
       deptByName: Object.fromEntries(departments.map((x) => [x.name, x])),
+      jobById,
       empByName: Object.fromEntries(employees.map((x) => [x.name, x])),
     };
   }

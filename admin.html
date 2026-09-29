@@ -44,14 +44,36 @@
   .hint { color: var(--muted); font-size: 13px; line-height: 1.5; }
   .dept-h { margin: 24px 0 10px; font-size: 12px; color: var(--muted); display: flex; align-items: center; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
   .dept-h::after { content: ""; flex: 1; height: 1px; background: var(--border); margin-left: 12px; }
-  .emp { display: grid; grid-template-columns: 200px 1fr; gap: 16px; align-items: center; padding: 12px 16px; margin-bottom: 8px; transition: border-color .15s; }
-  .emp:focus-within { border-color: var(--accent); }
-  .emp-name { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 10px; }
-  .emp-av { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; color: #fff; font-size: 14px; flex: 0 0 auto; }
-  .emp-tasks { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-  .emp-tasks label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
-  .emp-tasks label span { color: var(--muted); font-weight: 400; }
-  .savebar { position: sticky; bottom: 0; background: color-mix(in srgb, var(--page) 88%, transparent); backdrop-filter: blur(8px); border-top: 1px solid var(--border); padding: 12px 0; display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+  .wrap.wide { max-width: none; }
+  /* daily entry sheet: jobs down the side, people across the top (like the Excel sheet) */
+  .eg-wrap { overflow: auto; max-height: calc(100vh - 380px); min-height: 320px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+  table.eg { border-collapse: separate; border-spacing: 0; font-size: 13px; }
+  .eg th, .eg td { border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid); padding: 0; height: 34px; background: var(--surface); }
+  .eg thead th { position: sticky; top: 0; z-index: 3; background: var(--surface-2); color: var(--ink-2); font-weight: 600; font-size: 12px; padding: 0 6px; white-space: nowrap; text-align: center; }
+  .eg tfoot th, .eg tfoot td { position: sticky; bottom: 0; z-index: 3; background: var(--surface-2); color: var(--ink-2); font-size: 12px; text-align: center; border-top: 1px solid var(--border); }
+  .eg tfoot td.none { color: var(--muted); }
+  .eg .c-job { position: sticky; left: 0; z-index: 2; text-align: left; padding: 0 10px; width: 220px; min-width: 220px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+  .eg .c-unit { position: sticky; left: 220px; z-index: 2; color: var(--muted); padding: 0 8px; width: 70px; min-width: 70px; font-size: 12px; box-shadow: 1px 0 0 var(--border); }
+  .eg thead .c-job, .eg thead .c-unit, .eg tfoot .c-job, .eg tfoot .c-unit { z-index: 4; text-align: left; }
+  .eg .c-job .m { color: var(--muted); font-weight: 400; margin-right: 6px; }
+  .eg .c-p { min-width: 86px; }
+  .eg td.cell { width: 86px; min-width: 86px; }
+  .eg td.off { background: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--ink) 6%, transparent) 6px 7px), var(--surface-2); }
+  .eg td.cell input { width: 100%; height: 100%; border: 0; border-radius: 0; background: transparent; text-align: right; padding: 0 8px; font-variant-numeric: tabular-nums; box-shadow: none; }
+  .eg td.cell input:focus { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--surface); box-shadow: none; }
+  .eg td.cell input.changed { background: var(--warning-soft); }
+  .eg td.cell input.bad { background: var(--critical-soft); color: var(--critical-ink); }
+  .eg .c-tot { text-align: right; padding: 0 10px; font-weight: 600; white-space: nowrap; min-width: 120px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .eg tr.g th { height: 30px; text-align: left; background: var(--surface-2); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .eg tr.g th span { position: sticky; left: 10px; display: inline-flex; align-items: center; }
+  .eg .hl { background: var(--accent-soft) !important; color: var(--accent-ink) !important; }
+  /* jobs tab */
+  .jobs-card { margin-bottom: 16px; }
+  .jobs-h { display: flex; align-items: center; gap: 8px; padding: 12px 14px; font-size: 15px; border-bottom: 1px solid var(--grid); }
+  .jobs-h .hint { margin-left: auto; }
+  .jobs-add { padding: 10px 14px; border-top: 1px solid var(--grid); }
+  .job-table input { width: 100%; }
+  .savebar { position: sticky; bottom: 0; z-index: 6; background: color-mix(in srgb, var(--page) 88%, transparent); backdrop-filter: blur(8px); border-top: 1px solid var(--border); padding: 12px 0; display: flex; align-items: center; gap: 12px; margin-top: 16px; }
   .tcard { padding: 0; overflow: hidden; }
   table.t { width: 100%; border-collapse: collapse; }
   table.t th, table.t td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--grid); vertical-align: middle; }
@@ -65,8 +87,6 @@
   .chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
   .also-chips .chip { font-size: 11px; padding: 3px 8px; }
   .also-chips .chip[hidden] { display: none; }
-  .emp-name small { display: block; font-size: 11px; color: var(--muted); font-weight: 500; }
-  .emp-tasks label .dept-dot { margin-right: 5px; }
   /* departments tab */
   .ord { display: flex; gap: 4px; }
   .ord .icon-btn { width: 30px; height: 30px; box-shadow: none; }
@@ -101,8 +121,9 @@
   .toast.error::before { background: var(--critical); }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
   @media (max-width: 720px) {
-    .emp { grid-template-columns: 1fr; }
-    .emp-tasks { grid-template-columns: repeat(2, 1fr); }
+    .eg-wrap { max-height: 70vh; }
+    .eg .c-job { width: 140px; min-width: 140px; max-width: 140px; }
+    .eg .c-unit { left: 140px; }
     .appbar .hide-sm { display: none; }
     .appbar .brand-eyebrow { display: none; }
     .tcard { overflow: visible; }
@@ -127,12 +148,14 @@ let data = null;
 let tab = "entry";
 let entryDay = KPI.todayKey();
 let deptFilter = "";
+let onlyMembers = true;  // with a department chosen: only its people as columns
+let entryEdits = {};     // daily entry: "jobId|name" ➜ typed text, until saved
 let dirty = false;
 
 function toast(msg, error) {
   const t = document.getElementById("toast");
   t.textContent = msg; t.className = "toast show" + (error ? " error" : "");
-  clearTimeout(t._h); t._h = setTimeout(() => (t.className = "toast"), 2600);
+  clearTimeout(t._h); t._h = setTimeout(() => (t.className = "toast"), Math.max(2600, msg.length * 70));
 }
 window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
@@ -185,36 +208,58 @@ function shell() {
       ${themeBtn()}
       <button class="icon-btn" id="lo" title="Log out" aria-label="Log out">${KPI.ICONS.logout}</button>
     </div></div>
-    <div class="wrap">
-    <div class="page-h"><div><h1>Production data</h1><p>Record each person's daily count, and manage departments and the team.</p></div></div>
+    <div class="wrap" id="wrap">
+    <div class="page-h"><div><h1>Production data</h1><p>Record each person's daily counts per job, and manage departments, jobs and the team.</p></div></div>
     <nav class="tabs">
-      <button data-t="entry">Daily entry</button><button data-t="departments">Departments</button><button data-t="employees">Employees</button>
+      <button data-t="entry">Daily entry</button><button data-t="jobs">Jobs</button><button data-t="departments">Departments</button><button data-t="employees">Employees</button>
     </nav>
     <div id="view"></div></div>`;
   document.getElementById("lo").onclick = () => logout();
   bindTheme();
   app.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
     if (dirty && !confirm("You have unsaved changes. Leave this tab?")) return;
-    dirty = false; tab = b.dataset.t; renderTab();
+    dirty = false; entryEdits = {}; tab = b.dataset.t; renderTab();
   });
   renderTab();
 }
 function renderTab() {
   app.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.t === tab));
   document.onkeydown = null;
-  ({ entry: viewEntry, departments: viewDepartments, employees: viewEmployees })[tab]();
+  document.getElementById("wrap").classList.toggle("wide", tab === "entry"); // the sheet uses the full width
+  ({ entry: viewEntry, jobs: viewJobs, departments: viewDepartments, employees: viewEmployees })[tab]();
 }
 const deptNames = () => KPI.deptNames(data);
 const dot = (d) => `<span class="dept-dot" style="background:${KPI.deptColor(d)}"></span>`;
 
 // ───────── daily entry ─────────
-// One box per department the person works in: how many they made (sheets, sets …) that day.
+// Laid out like the client's Excel sheet: jobs down the side (grouped by department), people across the top.
+// Typed values live in entryEdits until saved, so changing the department filter never loses them.
 function viewEntry() {
   const v = document.getElementById("view");
   const depts = deptNames();
-  const emps = data.employees.filter((e) => e.active && (!deptFilter || e.departments.includes(deptFilter)));
-  const groupOf = (e) => deptFilter || (depts.includes(e.department) ? e.department : "");
-  const groups = [...depts, ""].filter((d) => emps.some((e) => groupOf(e) === d));
+  const key = (id, name) => id + "|" + name;
+  const saved = {};
+  data.entries.forEach((e) => { if (e.date === entryDay) saved[key(e.job, e.employee)] = e.qty; });
+  const text = (k) => (k in entryEdits ? entryEdits[k] : String(saved[k] ?? ""));
+  const used = (id) => Object.keys(saved).some((k) => k.startsWith(id + "|")) || Object.keys(entryEdits).some((k) => k.startsWith(id + "|"));
+  // Removed jobs only appear if they have a count that day (so it can still be corrected)
+  const jobs = data.jobs.filter((j) => (!deptFilter || j.department === deptFilter) && ((j.active && depts.includes(j.department)) || used(j.id)));
+  const people = data.employees.filter((e) => {
+    const has = jobs.some((j) => text(key(j.id, e.name)) !== "");
+    if (!e.active && !has) return false;
+    return !deptFilter || !onlyMembers || e.departments.includes(deptFilter) || has;
+  });
+  const cols = people.length + 3;
+  let rows = "", last = null;
+  jobs.forEach((j) => {
+    if (j.department !== last) {
+      last = j.department;
+      rows += `<tr class="g"><th colspan="${cols}"><span>${dot(j.department)}${esc(j.department || "No department")}</span></th></tr>`;
+    }
+    rows += `<tr data-job="${j.id}"><th class="c-job" title="${esc(j.department + " · " + KPI.jobLabel(j))}">${j.machine ? `<span class="m">${esc(j.machine)}</span>` : ""}${esc(j.name)}${j.active ? "" : ' <span class="m">(removed)</span>'}</th><td class="c-unit">${esc(j.unit)}</td>
+      ${people.map((e, c) => `<td class="cell${e.departments.includes(j.department) ? "" : " off"}"><input inputmode="decimal" data-c="${c}" data-emp="${esc(e.name)}" value="${esc(text(key(j.id, e.name)))}" aria-label="${esc(e.name)} — ${esc(KPI.jobLabel(j))}"></td>`).join("")}
+      <td class="c-tot"></td></tr>`;
+  });
   v.innerHTML = `
     <div class="toolbar">
       <button class="btn" id="prev" title="Previous day">◀</button>
@@ -223,68 +268,220 @@ function viewEntry() {
       <button class="btn" id="today">Today</button>
       <span class="datebig">${esc(KPI.fmtDate(entryDay, { weekday: "long", day: "numeric", month: "long", year: "numeric" }))}</span>
       <span class="sp"></span>
+      ${deptFilter ? `<label class="hint"><input type="checkbox" id="members" ${onlyMembers ? "checked" : ""}> Only people in ${esc(deptFilter)}</label>` : ""}
       <select id="dept"><option value="">All departments</option>${depts.map((d) => `<option ${d === deptFilter ? "selected" : ""}>${esc(d)}</option>`).join("")}</select>
     </div>
-    <p class="hint">Type how many each person made. You can type sums like <b>1500+250</b>. Leave blank or 0 for none. <b>Enter</b> moves to the next box, <b>Ctrl+S</b> saves.</p>
-    <div id="emps">${groups.map((g) => `
-      <div class="dept-h">${g ? dot(g) + esc(g) : "No department"}</div>
-      ${emps.filter((e) => groupOf(e) === g).map((e) => {
-        const cur = data.byKey[entryDay + "|" + e.name] || {};
-        // their departments (or just the filtered one), plus any department that already has a count that day
-        const boxes = deptFilter ? [deptFilter] : [...new Set([...e.departments, ...Object.keys(cur)])];
-        return `<div class="card emp" data-emp="${esc(e.name)}">
-          <div class="emp-name">${KPI.avatar(e, { size: "36px" })}<div>${esc(e.name)}${e.departments.length > 1 ? `<small>${esc(e.departments.join(" + "))}</small>` : ""}</div></div>
-          <div class="emp-tasks">${boxes.length ? boxes.map((d) => `
-            <div><label title="${esc(d)} — count in ${esc(KPI.unit(data, d))}">${dot(d)}${esc(d)}${KPI.unit(data, d).toLowerCase() === d.toLowerCase() ? "" : ` <span>(${esc(KPI.unit(data, d))})</span>`}</label>
-            <input class="num" inputmode="decimal" data-dept="${esc(d)}" data-orig="${cur[d] ?? ""}" value="${cur[d] ?? ""}" aria-label="${esc(e.name)} — ${esc(d)}"></div>`).join("")
-            : '<p class="hint">No department yet — set one in the Employees tab.</p>'}
-          </div></div>`;
-      }).join("")}`).join("") || '<p class="hint">No active employees. Add them in the Employees tab.</p>'}</div>
+    <p class="hint">Type each person's count in the row of the job they did, like the Excel sheet. Sums like <b>1500+250</b> work; leave blank for none.
+      <b>Enter</b> / arrow keys move between boxes, <b>Ctrl+S</b> saves. Shaded boxes = the person isn't in that department (you can still fill them).<br>
+      <b>From Excel:</b> copy the day's sheet from the <i>Dept</i> / names row down, click any box and paste — every count lands in the right place.</p>
+    ${jobs.length && people.length ? `<div class="eg-wrap"><table class="eg" id="eg">
+      <thead><tr><th class="c-job">Job</th><th class="c-unit">Unit</th>${people.map((e) => `<th class="c-p" title="${esc(e.departments.join(", "))}">${esc(e.name)}</th>`).join("")}<th class="c-tot">Total</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><th class="c-job">Jobs filled</th><td class="c-unit"></td>${people.map(() => "<td></td>").join("")}<td class="c-tot"></td></tr></tfoot>
+    </table></div>` : `<p class="hint">${jobs.length ? "No active employees — add them in the Employees tab." : "No jobs yet — add them in the Jobs tab."}</p>`}
     <div class="savebar"><button class="btn primary" id="save" disabled>Save changes</button><span class="hint" id="chg">No changes</span></div>`;
 
-  const setDay = (d) => { if (dirty && !confirm("Discard unsaved changes?")) return; dirty = false; entryDay = d > KPI.todayKey() ? KPI.todayKey() : d; viewEntry(); };
+  const setDay = (d) => { if (dirty && !confirm("Discard unsaved changes?")) return; dirty = false; entryEdits = {}; entryDay = d > KPI.todayKey() ? KPI.todayKey() : d; viewEntry(); };
   document.getElementById("day").onchange = (e) => e.target.value && setDay(e.target.value);
   document.getElementById("prev").onclick = () => setDay(KPI.addDays(entryDay, -1));
   document.getElementById("next").onclick = () => setDay(KPI.addDays(entryDay, 1));
   document.getElementById("next").disabled = entryDay >= KPI.todayKey();
   document.getElementById("today").onclick = () => setDay(KPI.todayKey());
-  document.getElementById("dept").onchange = (e) => { if (dirty && !confirm("Discard unsaved changes?")) { e.target.value = deptFilter; return; } dirty = false; deptFilter = e.target.value; viewEntry(); };
+  document.getElementById("dept").onchange = (e) => { deptFilter = e.target.value; viewEntry(); };
+  const mem = document.getElementById("members");
+  if (mem) mem.onchange = () => { onlyMembers = mem.checked; viewEntry(); };
 
-  const refreshAll = () => {
-    document.querySelectorAll("#emps input").forEach((i) => {
-      const q = KPI.parseQty(i.value);
-      i.classList.toggle("bad", Number.isNaN(q));
-      const orig = i.dataset.orig === "" ? null : Number(i.dataset.orig);
-      i.classList.toggle("changed", !Number.isNaN(q) && (q || null) !== (orig || null));
-    });
-    const n = document.querySelectorAll("#emps input.changed").length, bad = document.querySelectorAll("#emps input.bad").length;
-    dirty = n > 0;
-    document.getElementById("save").disabled = !n || bad;
-    document.getElementById("chg").textContent = bad ? `${bad} invalid value(s) — use numbers only` : n ? `${n} unsaved change(s)` : "No changes";
-  };
-  document.getElementById("emps").addEventListener("input", refreshAll);
-  document.getElementById("emps").addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && e.target.matches("input")) {
-      const all = [...document.querySelectorAll("#emps input")]; const i = all.indexOf(e.target);
-      all[i + 1]?.focus(); all[i + 1]?.select(); e.preventDefault();
+  // What changed compared with what is saved (all edits, including rows hidden by the filter)
+  const changes = () => {
+    const out = [], bad = [];
+    for (const [k, t] of Object.entries(entryEdits)) {
+      const q = KPI.parseQty(t);
+      if (Number.isNaN(q)) { bad.push(k); continue; }
+      if ((q || null) !== (saved[k] || null)) { const i = k.indexOf("|"); out.push({ job: Number(k.slice(0, i)), employee: k.slice(i + 1), qty: q || null }); }
     }
-  });
-  refreshAll();
+    return { out, bad };
+  };
+  const eg = document.getElementById("eg");
+  const paintCell = (i) => {
+    const k = key(i.closest("tr").dataset.job, i.dataset.emp);
+    const q = KPI.parseQty(i.value);
+    i.classList.toggle("bad", Number.isNaN(q));
+    i.classList.toggle("changed", !Number.isNaN(q) && (q || null) !== (saved[k] || null));
+  };
+  const paintTotals = () => {
+    if (!eg) return;
+    eg.querySelectorAll("tbody tr[data-job]").forEach((tr) => {
+      const unit = tr.querySelector(".c-unit").textContent;
+      const sum = [...tr.querySelectorAll("input")].reduce((a, i) => a + (KPI.parseQty(i.value) || 0), 0);
+      tr.querySelector(".c-tot").textContent = sum ? `${KPI.fmtFull(sum)} ${unit}` : "";
+    });
+    const foot = eg.querySelectorAll("tfoot td");
+    people.forEach((e, c) => {
+      const n = eg.querySelectorAll(`tbody input[data-c="${c}"]`);
+      const filled = [...n].filter((i) => KPI.parseQty(i.value)).length;
+      foot[c + 1].textContent = filled || "–";
+      foot[c + 1].classList.toggle("none", !filled);
+    });
+  };
+  const refresh = () => {
+    const { out, bad } = changes();
+    dirty = out.length > 0 || bad.length > 0;
+    document.getElementById("save").disabled = !out.length || bad.length > 0;
+    document.getElementById("chg").textContent = bad.length ? `${bad.length} invalid value(s) — use numbers only` : out.length ? `${out.length} unsaved change(s)` : "No changes";
+  };
+  const edit = (i, value) => {
+    if (value != null) i.value = value;
+    entryEdits[key(i.closest("tr").dataset.job, i.dataset.emp)] = i.value;
+    paintCell(i);
+  };
+  if (eg) {
+    eg.querySelectorAll("tbody input").forEach(paintCell);
+    paintTotals();
+    eg.addEventListener("input", (e) => { edit(e.target); paintTotals(); refresh(); });
+
+    // Keyboard: Enter / ↑ ↓ move up and down, ← → move sideways at the edge of the text (like Excel)
+    const bodyRows = () => [...eg.querySelectorAll("tbody tr[data-job]")];
+    const cellAt = (tr, c) => tr?.querySelector(`input[data-c="${c}"]`);
+    const go = (i) => { if (i) { i.focus(); i.select(); } };
+    eg.addEventListener("keydown", (e) => {
+      const i = e.target.closest("input"); if (!i) return;
+      const rs = bodyRows(), r = rs.indexOf(i.closest("tr")), c = Number(i.dataset.c);
+      const all = i.selectionStart === 0 && i.selectionEnd === i.value.length;
+      if (e.key === "Enter" || e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        go(cellAt(rs[r + (e.key === "ArrowUp" || (e.key === "Enter" && e.shiftKey) ? -1 : 1)], c));
+      } else if (e.key === "ArrowRight" && (all || i.selectionStart === i.value.length)) { e.preventDefault(); go(cellAt(rs[r], c + 1)); }
+      else if (e.key === "ArrowLeft" && (all || i.selectionEnd === 0)) { e.preventDefault(); go(cellAt(rs[r], c - 1)); }
+      else if (e.key === "Escape") { const k = key(i.closest("tr").dataset.job, i.dataset.emp); edit(i, String(saved[k] ?? "")); paintTotals(); refresh(); i.select(); }
+    });
+    // Highlight the row and the person's column of the box being typed in
+    eg.addEventListener("focusin", (e) => {
+      const i = e.target.closest("input"); if (!i) return;
+      eg.querySelectorAll(".hl").forEach((x) => x.classList.remove("hl"));
+      i.closest("tr").querySelector(".c-job").classList.add("hl");
+      eg.querySelectorAll("thead th.c-p")[Number(i.dataset.c)]?.classList.add("hl");
+      i.select();
+    });
+
+    // Paste from Excel: a whole sheet (with the names row) goes by name and job; any other block fills from the box.
+    eg.addEventListener("paste", (e) => {
+      const i = e.target.closest("input"); if (!i) return;
+      const txt = (e.clipboardData || window.clipboardData).getData("text");
+      if (!/[\t\n]/.test(txt.replace(/\r?\n$/, ""))) return; // a single value: normal paste
+      e.preventDefault();
+      const grid = txt.replace(/\r/g, "").replace(/\n$/, "").split("\n").map((r) => r.split("\t"));
+      const names = new Map(data.employees.map((x) => [x.name.toLowerCase(), x.name]));
+      const h = grid.findIndex((r) => r.filter((c) => names.has(c.trim().toLowerCase())).length >= 2);
+      if (h >= 0) return pasteSheet(grid, h, names);
+      const rs = bodyRows(), r0 = rs.indexOf(i.closest("tr")), c0 = Number(i.dataset.c);
+      let n = 0;
+      grid.forEach((row, dr) => row.forEach((val, dc) => { const t = cellAt(rs[r0 + dr], c0 + dc); if (t) { edit(t, val.trim()); n++; } }));
+      paintTotals(); refresh();
+      toast(`Pasted ${n} box${n === 1 ? "" : "es"}`);
+    });
+  }
+  // A copied day sheet: columns matched by name, rows by department + machine/unit + job.
+  function pasteSheet(grid, h, names) {
+    const colName = grid[h].map((c) => names.get(c.trim().toLowerCase()) || null);
+    const unknown = grid[h].map((c, idx) => (idx > 2 && c.trim() && !colName[idx] && grid.slice(h + 1).some((r) => (r[idx] || "").trim()) ? c.trim() : null)).filter(Boolean);
+    const lc = (s) => String(s || "").trim().toLowerCase();
+    const findJob = (dept, b, c) => {
+      const cands = data.jobs.filter((j) => lc(j.name) === lc(c));
+      const inDept = cands.filter((j) => lc(j.department) === lc(dept));
+      const pool = inDept.length ? inDept : cands;
+      const score = (j) => (b && lc(j.machine) === lc(b) ? 4 : 0) + (b && lc(j.unit) === lc(b) ? 2 : 0) + (!b && !j.machine ? 1 : 0) + (j.active ? 1 : 0);
+      return pool.sort((x, y) => score(y) - score(x))[0] || null;
+    };
+    let dept = "", n = 0;
+    const missing = [];
+    for (const row of grid.slice(h + 1)) {
+      const [a, b, c] = [0, 1, 2].map((x) => (row[x] || "").trim());
+      if (a) dept = a;
+      const hasVals = colName.some((nm, idx) => nm && (row[idx] || "").trim());
+      if (!c) { if (hasVals) missing.push([a, b].filter(Boolean).join(" ") || "a row without a job name"); continue; }
+      const job = findJob(dept, b, c);
+      if (!job) { if (hasVals) missing.push([dept, b, c].filter(Boolean).join(" ")); continue; }
+      colName.forEach((nm, idx) => {
+        if (!nm) return;
+        const k = key(job.id, nm), val = (row[idx] || "").trim();
+        if (val === text(k)) return;
+        entryEdits[k] = val; if (val) n++;
+      });
+    }
+    viewEntry();
+    const warn = [missing.length && `rows not found in Jobs: ${missing.join(", ")}`, unknown.length && `not in Employees: ${unknown.join(", ")}`].filter(Boolean).join(" · ");
+    toast(`Pasted the sheet — ${n} count${n === 1 ? "" : "s"} filled in. Check and click Save.${warn ? " Skipped " + warn : ""}`, !!warn);
+  }
+  refresh();
 
   const save = async () => {
-    const rows = [...document.querySelectorAll("#emps input.changed")].map((i) => ({
-      employee: i.closest(".emp").dataset.emp, department: i.dataset.dept, qty: KPI.parseQty(i.value) || null,
-    }));
-    if (!rows.length || document.querySelector("#emps input.bad")) return;
+    const { out, bad } = changes();
+    if (!out.length || bad.length) return;
     const btn = document.getElementById("save"); btn.disabled = true; btn.textContent = "Saving…";
     try {
-      await KPI.saveEntries(entryDay, rows);
-      await reloadData(); dirty = false;
-      toast(`Saved ${rows.length} count(s) for ${KPI.fmtDate(entryDay)}`); viewEntry();
+      await KPI.saveEntries(entryDay, out);
+      await reloadData(); dirty = false; entryEdits = {};
+      toast(`Saved ${out.length} count(s) for ${KPI.fmtDate(entryDay)}`); viewEntry();
     } catch (e) { btn.disabled = false; btn.textContent = "Save changes"; failed(e); }
   };
   document.getElementById("save").onclick = save;
   document.onkeydown = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); save(); } };
+}
+
+// ───────── jobs ─────────
+// The rows of the daily sheet, per department: optional machine / type, the job, and the unit it is counted in.
+function viewJobs() {
+  const v = document.getElementById("view");
+  const counts = {};
+  data.entries.forEach((e) => { counts[e.job] = (counts[e.job] || 0) + 1; });
+  const row = (j = {}) => `<tr data-id="${j.id ?? ""}" data-n="${counts[j.id] || 0}">
+    <td><div class="ord"><button type="button" class="icon-btn up" title="Move up" aria-label="Move up">${KPI.ICONS.chevU}</button><button type="button" class="icon-btn dn" title="Move down" aria-label="Move down">${KPI.ICONS.chevD}</button></div></td>
+    <td><input class="mc" value="${esc(j.machine || "")}" placeholder="—" aria-label="Machine or type (optional)"></td>
+    <td><input class="nm" value="${esc(j.name || "")}" placeholder="Job name" aria-label="Job name"></td>
+    <td><input class="un" value="${esc(j.unit || "")}" placeholder="pcs" aria-label="Unit"></td>
+    <td><button type="button" class="btn danger del">${KPI.ICONS.trash} Remove</button></td></tr>`;
+  v.innerHTML = `<p class="hint">These are the rows of the <b>Daily entry</b> sheet, in the same order. <b>Machine / type</b> is optional (RT1, Collator 2 …).
+    Each job has its own <b>unit</b>: people are compared with others who did the same job that day, and a department's total on the TV adds up the jobs counted in the department's unit (set in the Departments tab).
+    Removing a job hides it; its past counts stay saved, and adding it back with the same name brings them back.</p>
+    ${data.departments.map((d) => `<div class="card tcard jobs-card" data-dept="${esc(d.name)}">
+      <div class="jobs-h">${dot(d.name)}<b>${esc(d.name)}</b><span class="hint">department total counts <b>${esc(d.unit)}</b></span></div>
+      <table class="t job-table"><thead><tr><th style="width:92px">Order</th><th style="width:26%">Machine / type</th><th>Job</th><th style="width:150px">Unit</th><th style="width:110px"></th></tr></thead>
+      <tbody>${data.jobs.filter((j) => j.active && j.department === d.name).map(row).join("")}</tbody></table>
+      <div class="jobs-add"><button type="button" class="btn add">+ Add job to ${esc(d.name)}</button></div></div>`).join("") || '<p class="hint">Add a department first in the Departments tab.</p>'}
+    <div class="savebar"><button class="btn primary" id="save">Save jobs</button><span class="hint" id="chg"></span></div>`;
+  const mark = () => { dirty = true; document.getElementById("chg").textContent = "Unsaved changes"; };
+
+  v.querySelectorAll(".jobs-card").forEach((card) => {
+    const tb = card.querySelector("tbody");
+    card.addEventListener("input", mark);
+    const unit = data.deptByName[card.dataset.dept]?.unit || "pcs";
+    card.querySelector(".add").onclick = () => { tb.insertAdjacentHTML("beforeend", row({ unit })); tb.lastElementChild.querySelector(".nm").focus(); mark(); };
+    tb.addEventListener("click", (e) => {
+      const tr = e.target.closest("tr"); if (!tr) return;
+      if (e.target.closest(".up") && tr.previousElementSibling) { tb.insertBefore(tr, tr.previousElementSibling); mark(); }
+      if (e.target.closest(".dn") && tr.nextElementSibling) { tb.insertBefore(tr.nextElementSibling, tr); mark(); }
+      if (e.target.closest(".del")) {
+        const n = Number(tr.dataset.n);
+        if (n && !confirm(`“${tr.querySelector(".nm").value}” has ${n} count(s) in the last few months. Remove it from the sheet? Its counts stay saved.`)) return;
+        tr.remove(); mark();
+      }
+    });
+  });
+  document.getElementById("save").onclick = async () => {
+    const rows = [];
+    for (const card of v.querySelectorAll(".jobs-card")) {
+      const seen = new Set();
+      for (const tr of card.querySelectorAll("tbody tr")) {
+        const r = { id: tr.dataset.id ? Number(tr.dataset.id) : undefined, department: card.dataset.dept, machine: tr.querySelector(".mc").value.trim(), name: tr.querySelector(".nm").value.trim(), unit: tr.querySelector(".un").value.trim() || "pcs" };
+        if (!r.name) { tr.querySelector(".nm").focus(); return toast(`${card.dataset.dept}: a job needs a name`, true); }
+        const k = (r.machine + "|" + r.name).toLowerCase();
+        if (seen.has(k)) return toast(`${card.dataset.dept}: “${KPI.jobLabel(r)}” is listed twice`, true);
+        seen.add(k); rows.push(r);
+      }
+    }
+    try { await KPI.saveJobs(rows); await reloadData(); dirty = false; toast("Jobs saved"); viewJobs(); }
+    catch (e) { failed(e); }
+  };
 }
 
 // ───────── departments ─────────
@@ -292,10 +489,10 @@ function viewEntry() {
 function viewDepartments() {
   const v = document.getElementById("view");
   const members = (d) => data.employees.filter((e) => e.departments.includes(d)).map((e) => e.name);
-  v.innerHTML = `<p class="hint">Each department counts one thing per person per day — set what it's called in <b>Unit</b> (for example <i>sheets</i>, <i>sets</i>, <i>packs</i>).
-    The order here is the order on the TV screens and sets each department's colour. Renaming keeps its history and people.
-    Removing a department takes it off everyone's list; its past counts stay saved, so adding it back with the same name restores them.</p>
-    <div class="card tcard"><table class="t dept-table"><thead><tr><th style="width:92px">Order</th><th>Department</th><th style="width:180px">Unit</th><th>People</th><th style="width:110px"></th></tr></thead>
+  v.innerHTML = `<p class="hint">Departments group the jobs (Jobs tab) and the people. <b>Unit</b> is what the department's total on the TV counts: it adds up the department's jobs counted in that unit (for example <i>sheets</i>); jobs in other units are shown next to it.
+    The order here is the order on the TV screens and sets each department's colour. Renaming keeps its jobs, history and people.
+    Removing a department takes it off everyone's list and hides its jobs; their past counts stay saved.</p>
+    <div class="card tcard"><table class="t dept-table"><thead><tr><th style="width:92px">Order</th><th>Department</th><th style="width:180px">Total counts</th><th>People</th><th style="width:110px"></th></tr></thead>
     <tbody id="tb">${data.departments.map((d) => row(d.name, d.unit, members(d.name))).join("")}</tbody></table></div>
     <div class="toolbar" style="margin-top:12px"><input id="newname" placeholder="New department name"><input id="newunit" placeholder="Unit, e.g. sheets" style="width:160px"><button class="btn" id="add">+ Add department</button></div>
     <div class="savebar"><button class="btn primary" id="save">Save departments</button><span class="hint" id="chg"></span></div>`;
@@ -360,7 +557,7 @@ function viewEmployees() {
     <td><div class="chips also-chips">${opts.map((d) => { const on = e.departments.slice(1).includes(d); return `<label class="chip ${on ? "on" : ""}" ${d === e.department ? "hidden" : ""}><input type="checkbox" class="dp2" value="${esc(d)}" ${on ? "checked" : ""}>${esc(d)}</label>`; }).join("")}</div></td>
     <td><label class="hint"><input type="checkbox" class="ac" ${e.active ? "checked" : ""}> Show</label></td></tr>`;
   };
-  v.innerHTML = `<p class="hint">Click a picture (or <b>Upload</b>) to add a profile photo — it is cropped to a square and compressed automatically. Pick each person's <b>main department</b> and tick any others they also work in: Daily entry shows one box for each. Untick <b>Show</b> to hide someone from the TV without deleting their history. Renaming keeps past counts linked.</p>
+  v.innerHTML = `<p class="hint">Click a picture (or <b>Upload</b>) to add a profile photo — it is cropped to a square and compressed automatically. Pick each person's <b>main department</b> and tick any others they also work in: that decides where they appear on the TV, and which rows of Daily entry are shaded for them. Untick <b>Show</b> to hide someone from the TV without deleting their history. Renaming keeps past counts linked.</p>
     <div class="card tcard"><table class="t emp-table"><thead><tr><th>Photo</th><th>Name</th><th>Main department</th><th>Also works in</th><th>TV</th></tr></thead><tbody id="tb">${data.employees.map(row).join("")}</tbody></table></div>
     <div class="toolbar" style="margin-top:12px"><button class="btn" id="add">+ Add employee</button><span class="hint">Add or rename departments in the Departments tab.</span></div>
     <div class="savebar"><button class="btn primary" id="save">Save employees</button></div>`;

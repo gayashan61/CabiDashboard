@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────
 //  Production KPI Dashboard — configuration
-//  Departments, employees and daily counts are managed in the Admin page (stored in Supabase).
+//  Departments, jobs, employees and daily counts are managed in the Admin page (stored in Supabase).
 // ─────────────────────────────────────────────────────────────
 window.KPI_CONFIG = {
   // Supabase: Project Settings ➜ API Keys ➜ Project URL and the publishable key.
@@ -19,7 +19,7 @@ window.KPI_CONFIG = {
   // Days counted as working days (0 = Sunday … 6 = Saturday). Used for 7-day averages and day stepping.
   WORK_DAYS: [1, 2, 3, 4, 5, 6],
 
-  // Colours compare each person's count with the average count of their department that day (in %):
+  // Colours compare each person's count with the average of everyone who did the same job that day (in %):
   //  green  = at or above `good`, amber = at or above `warning`, red = below.
   THRESHOLDS: { good: 100, warning: 80 },
 

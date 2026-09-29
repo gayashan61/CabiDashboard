@@ -14,7 +14,7 @@ select * from (values
   ('Nandani', 'Sets', 5),
   ('Avishka', 'Sheets', 6),
   ('Mahesh', 'Sheets', 7),
-  ('Piyal', 'TH & 2ply', 8),
+  ('Piyal', 'Rolls', 8),
   ('Dilhani', 'Packing', 9),
   ('Senuri', 'Packing', 10),
   ('Hansani', 'Packing', 11),

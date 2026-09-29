@@ -95,7 +95,7 @@ function overview(people, data, day) {
     const members = people.filter((p) => p.departments.includes(name)).length;
     return { name, unit: KPI.unit(data, name), ...dd, weekAvg, members, vs: dd.total != null && weekAvg ? dd.total / weekAvg : null };
   });
-  // Each person's best department today, ranked by how far above that department's average they are
+  // Each person's best job today, ranked by how far above that job's average they are
   const top = people.filter((p) => p.today.has)
     .map((p) => ({ p, t: [...p.today.parts].sort((a, b) => (b.ratio ?? 1) - (a.ratio ?? 1))[0] }))
     .sort((a, b) => (b.t.ratio ?? 1) - (a.t.ratio ?? 1) || b.t.qty - a.t.qty).slice(0, 6);
@@ -105,19 +105,19 @@ function overview(people, data, day) {
       return `<div class="card kpi"><div class="kpi-l"><span><span class="dept-dot" style="background:${KPI.deptColor(d.name)}"></span>${esc(d.name)}</span>${d.vs == null ? "" : KPI.pill(d.vs, KPI.vsAvg(d.vs).replace("vs avg", "vs 7-day").replace("at avg", "= 7-day avg"))}</div>
         <div class="kpi-v">${d.total == null ? "–" : fmtNum(d.total)}<span> ${esc(d.unit)}</span></div>
         <div class="bar" title="Tick = average daily total of the last 7 working days"><span class="bg-${s.key}" style="width:${KPI.ratioW(d.vs)}%"></span><i class="tgt" style="left:${KPI.AVG_TICK}%"></i></div>
-        <div class="kpi-s">7-day avg ${fmtNum(d.weekAvg)} · ${d.n} of ${d.members} logged</div></div>`;
+        <div class="kpi-s">7-day avg ${fmtNum(d.weekAvg)} · ${d.n} of ${d.members} logged${d.others.map((o) => ` · + ${fmtNum(o.total)} ${esc(o.unit)}`).join("")}</div></div>`;
     }).join("") || '<div class="card kpi"><div class="kpi-s">No departments yet — add them in Admin ➜ Departments.</div></div>'}</div>
     <div class="card panel"><div class="card-h"><h2 class="card-title">Department totals</h2><span class="card-sub">per day · last 20 working days</span></div>
       <div class="dtrends">${depts.map((d) => `<div class="dtrend">
         <div class="dtrend-n"><span class="dept-dot" style="background:${KPI.deptColor(d.name)}"></span>${esc(d.name)}</div>
         <div class="dtrend-c">${KPI.trendChart(KPI.deptSeries(data, d.name, day, 20), { mini: true, color: KPI.deptColor(d.name) })}</div>
         <div class="dtrend-v">${d.total == null ? "–" : fmtNum(d.total)}<small>${esc(d.unit)} ${esc(on)}</small></div></div>`).join("")}</div></div>
-    <div class="card panel"><div class="card-h"><h2 class="card-title" style="display:flex;align-items:center;gap:.5rem">${ICONS.trophy} Top performers ${on}</h2><span class="card-sub">vs their department's average</span></div>
+    <div class="card panel"><div class="card-h"><h2 class="card-title" style="display:flex;align-items:center;gap:.5rem">${ICONS.trophy} Top performers ${on}</h2><span class="card-sub">vs the average on the same job</span></div>
       <div class="lb">${top.length ? top.map(({ p, t }, i) => {
         const s = status(t.ratio);
         return `<div class="lb-row"><div class="lb-rank ${i === 0 ? "r1" : ""}">${i + 1}</div>${KPI.avatar(p, { size: "3.4rem", ring: s.key })}
-          <div class="lb-name">${esc(p.name)}<small><span class="dept-dot" style="background:${KPI.deptColor(t.dept)}"></span>${esc(t.dept)}</small></div>
-          <div class="lb-val">${fmtFull(t.qty)}<small>${esc(t.unit)}</small><em class="st-${s.key}">${esc(KPI.vsAvg(t.ratio) || "only one today")}</em></div></div>`;
+          <div class="lb-name">${esc(p.name)}<small title="${esc(t.dept)}"><span class="dept-dot" style="background:${KPI.deptColor(t.dept)}"></span>${esc(t.label)}</small></div>
+          <div class="lb-val">${fmtFull(t.qty)}<small>${esc(t.unit)}</small><em class="st-${s.key}">${esc(t.n > 1 ? KPI.vsAvg(t.ratio) : "only one on this job")}</em></div></div>`;
       }).join("") : '<div class="empty">No counts yet for this day</div>'}</div></div>
   </div>`;
 }
