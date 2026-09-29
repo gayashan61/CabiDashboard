@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Team Grid · Production KPI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -70,6 +70,40 @@
   .pf-list .empty { grid-column: 1 / -1; padding: 1.5rem 0.5rem; font-size: 0.95rem; }
   .pf-hint { font-size: 0.78rem; color: var(--muted); text-align: center; }
   .kiosk .pf-hint, .kiosk .pf-back { display: none; }
+  .pf-mbar, .pf-close, .pf-scrim { display: none; }
+
+  /* phones and tablets: tiles in 1–2 columns, profile full width, the team list as a bottom sheet */
+  @media (max-width: 1023px) {
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; grid-template-rows: none !important; gap: 12px; min-height: 0; }
+    .tile { padding: 14px 16px 12px; }
+    .tile-score { font-size: 2.3rem; }
+    .tile-foot { gap: 12px; }
+    .tile-spark { height: 2.6rem; }
+    .profile { display: block; height: auto; }
+    .profile[hidden] { display: none; }
+    .pf-main { height: auto; }
+    .pf-mbar { display: flex; gap: 8px; margin-bottom: 12px; }
+    .pf-mbar .btn { min-height: 44px; }
+    .pf-mbar .btn:last-child { flex: 1; justify-content: flex-start; color: var(--muted); }
+    .pf-side {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 31; max-width: 640px; max-height: 80vh; margin: 0 auto;
+      border-radius: 18px 18px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+      transform: translateY(105%); visibility: hidden; transition: transform .25s ease, visibility 0s linear .25s;
+    }
+    .pf-side.open { transform: none; visibility: visible; transition: transform .25s ease; }
+    .pf-scrim { position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, 0.45); }
+    .pf-scrim:not([hidden]) { display: block; }
+    .pf-side .pf-back, .pf-hint { display: none; }
+    .pf-close { display: inline-flex; min-height: 44px; }
+    .search input { font-size: 16px; min-height: 44px; }
+    .pf-list { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+    .mt { min-height: 44px; }
+    .kiosk .pf-mbar { display: none; }
+  }
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: minmax(0, 1fr) !important; }
+    .tile-tasks div:nth-child(n+3) { display: none; } /* at most two task lines */
+  }
 </style>
 </head>
 <body>
@@ -78,9 +112,11 @@
   <main class="tv-main">
     <div class="grid" id="grid"></div>
     <div class="profile" id="profile" hidden>
+      <div class="pf-mbar"><button class="btn" id="pf-back-m">‹ All</button><button class="btn" id="pf-find"></button></div>
       <section class="ps pf-main" id="pf-main"></section>
-      <aside class="card pf-side" aria-label="Team">
-        <div class="pf-side-h"><h2>Team<span id="pf-count"></span></h2><button class="btn pf-back" id="pf-back" title="Back to the grid (Esc)"></button></div>
+      <div class="pf-scrim" id="pf-scrim" hidden></div>
+      <aside class="card pf-side" id="pf-side" aria-label="Team">
+        <div class="pf-side-h"><h2>Team<span id="pf-count"></span></h2><button class="btn pf-back" id="pf-back" title="Back to the grid (Esc)"></button><button class="btn pf-close" id="pf-close">Close</button></div>
         <label class="search"><span id="pf-search-ico"></span><input type="search" id="pf-q" placeholder="Search by name…" autocomplete="off" aria-label="Search team members"></label>
         <div class="pf-list" id="pf-list"></div>
         <div class="pf-hint">Esc to go back · / to search</div>
@@ -105,13 +141,24 @@ let selected = null; // name of the person whose profile is open
 
 $("pf-back").innerHTML = KPI.ICONS.grid + " All";
 $("pf-search-ico").outerHTML = KPI.ICONS.search;
+$("pf-find").innerHTML = KPI.ICONS.search + " Search team";
+
+// Phones / tablets: the team list is a bottom sheet opened with "Search team"
+const narrow = () => matchMedia("(max-width: 1023px)").matches;
+function openSheet() { $("pf-side").classList.add("open"); $("pf-scrim").hidden = false; $("pf-q").focus(); }
+function closeSheet() { $("pf-side").classList.remove("open"); $("pf-scrim").hidden = true; }
+const sheetOpen = () => $("pf-side").classList.contains("open");
 
 function openProfile(name) {
+  const changed = name !== selected;
   selected = name;
+  closeSheet();
   drawProfile();
+  if (changed && narrow()) window.scrollTo(0, 0);
 }
 function closeProfile() {
   selected = null;
+  closeSheet();
   $("pf-q").value = "";
   $("profile").hidden = true;
   $("grid").hidden = false;
@@ -149,6 +196,10 @@ function onPick(e) {
 }
 ["grid", "pf-list"].forEach((id) => { $(id).addEventListener("click", onPick); $(id).addEventListener("keydown", onPick); });
 $("pf-back").onclick = closeProfile;
+$("pf-back-m").onclick = closeProfile;
+$("pf-find").onclick = openSheet;
+$("pf-close").onclick = closeSheet;
+$("pf-scrim").onclick = closeSheet;
 $("pf-q").addEventListener("input", drawList);
 $("pf-q").addEventListener("keydown", (e) => {
   // Enter opens the first match
@@ -157,7 +208,7 @@ $("pf-q").addEventListener("keydown", (e) => {
 document.addEventListener("keydown", (e) => {
   if (!selected) return;
   const inSearch = document.activeElement === $("pf-q");
-  if (e.key === "Escape") { if (inSearch && $("pf-q").value) { $("pf-q").value = ""; drawList(); } else closeProfile(); }
+  if (e.key === "Escape") { if (inSearch && $("pf-q").value) { $("pf-q").value = ""; drawList(); } else if (sheetOpen()) closeSheet(); else closeProfile(); }
   if (e.key === "/" && !inSearch) { e.preventDefault(); $("pf-q").focus(); }
 });
 

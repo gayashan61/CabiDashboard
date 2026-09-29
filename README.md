@@ -28,6 +28,13 @@ Each day the admin fills in a sheet laid out like the client's Excel file: **tas
 - **Light and dark themes:** use the sun/moon button. To lock a TV to one theme, add `?theme=light` or `?theme=dark` to its link. The default for everyone is `DEFAULT_THEME` in `assets/config.js`.
 - **Kiosk mode:** add `&kiosk=1` to a TV link, for example `tv-slides.html?theme=dark&kiosk=1`, to hide the buttons and navigation.
 
+### Phones and tablets
+Every page works on a phone (from 360px wide) and a tablet. From 1024px up, the desktop and TV layouts are exactly as before.
+- **Daily entry** becomes one card per task instead of the wide sheet. Pick a department with the chips, tap a task, and type each person's count. The department's own people come first; **+ N people from other departments** shows the rest. The keyboard's **Next** key moves to the next person. The card header shows the task total. **Export Excel** is in the **⋯** menu. Pasting from Excel works best on a computer.
+- **Tasks, Departments, Employees**: each row becomes a card with full-width fields.
+- The admin bar keeps the theme and log-out buttons; the TV screen links and your email are in the **⋯** menu.
+- **TV screens**: the view switcher becomes a bar at the bottom and the calendar opens as a sheet. Team grid shows one column of tiles (two on a tablet); tap a person for their profile and use **Search team** to jump to someone else. Departments shows one leaderboard at a time: tap the chips or swipe sideways. The slideshow doesn't move on its own on a phone; swipe or use ‹ ▶ ›.
+
 ### Profile photos
 - Go to **Admin → Employees** and click a person's picture or **Upload**. On a phone you can take the photo with the camera.
 - The photo is cropped to a square and shrunk to about 10–30 KB automatically. Anyone who has the site link can see the photos, so get staff consent first.

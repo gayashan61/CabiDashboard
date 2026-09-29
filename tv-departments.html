@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Departments · Production KPI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -37,12 +37,29 @@
   /* people who also work in another department */
   .rname small { display: block; font-size: 0.78rem; font-weight: 500; color: var(--muted); overflow: hidden; text-overflow: ellipsis; margin-top: 0.05rem; }
   .rname small .dept-dot { width: 0.55em; height: 0.55em; margin-right: 0.3em; }
+  #mtabs { display: none; }
+
+  /* phones and tablets: one department at a time — tabs above, or swipe sideways */
+  @media (max-width: 1023px) {
+    #mtabs { display: flex; }
+    .cols { grid-template-columns: minmax(0, 1fr) !important; height: auto; }
+    .col { overflow: visible; }
+    .col:not(.sel) { display: none; }
+    .col-head { padding: 16px; }
+    .col-avg { font-size: 2.4rem; }
+    .col-stats { flex-wrap: wrap; align-items: flex-start; gap: 8px 12px; }
+    .col-meta { text-align: left; flex: 1 1 100%; }
+    .rows { overflow: visible; padding: 4px 16px 10px; }
+    .row { grid-template-columns: 1.4rem 2.8rem minmax(0, 1fr) auto; column-gap: 10px; }
+    .rname { font-size: 1.05rem; }
+    .rscore { font-size: 1.1rem; }
+  }
 </style>
 </head>
 <body>
 <div class="tv">
   <header class="tv-header" id="hdr"></header>
-  <main class="tv-main"><div class="cols" id="cols"></div></main>
+  <main class="tv-main"><nav class="chip-row" id="mtabs" aria-label="Department"></nav><div class="cols" id="cols"></div></main>
   <footer class="tv-footer" id="legend"></footer>
 </div>
 <script src="assets/core.js"></script>
@@ -55,12 +72,34 @@ document.getElementById("legend").innerHTML =
    ${KPI.pill(0, `Below avg < ${CFG.THRESHOLDS.warning}%`)}
    <span class="legend-item">Ranked against the average of everyone on the same task today · tick on each bar = that average · bars stop at 150%</span>`;
 
+// Phones / tablets show one department at a time: this one (tabs above, or swipe the list sideways)
+let mSel = null, mNames = [];
+const pickDept = (name) => {
+  mSel = name; KPI.refresh();
+  document.querySelector("#mtabs .on")?.scrollIntoView({ block: "nearest", inline: "center" });
+};
+document.getElementById("mtabs").onclick = (e) => { const b = e.target.closest("[data-d]"); if (b) pickDept(b.dataset.d); };
+let touch = null;
+document.getElementById("cols").addEventListener("touchstart", (e) => { touch = e.touches.length === 1 ? [e.touches[0].clientX, e.touches[0].clientY] : null; }, { passive: true });
+document.getElementById("cols").addEventListener("touchend", (e) => {
+  if (!touch) return;
+  const dx = e.changedTouches[0].clientX - touch[0], dy = e.changedTouches[0].clientY - touch[1];
+  touch = null;
+  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  const i = mNames.indexOf(mSel) + (dx < 0 ? 1 : -1);
+  if (i >= 0 && i < mNames.length) pickDept(mNames[i]);
+});
+
 KPI.autoRefresh((data) => {
   const day = KPI.displayDay(data);
   KPI.setHeaderDay(day);
   const people = KPI.summaries(data, day);
   const names = KPI.deptNames(data);
   const groups = names.map((n) => ({ name: n, people: KPI.deptPeople(data, people, n, day) })).filter((g) => g.people.length);
+  mNames = groups.map((g) => g.name);
+  if (!mNames.includes(mSel)) mSel = mNames[0] || null;
+  document.getElementById("mtabs").innerHTML = groups.map((g) =>
+    `<button type="button" data-d="${esc(g.name)}" class="${g.name === mSel ? "on" : ""}" aria-pressed="${g.name === mSel}"><span class="dept-dot" style="background:${KPI.deptColor(g.name)}"></span>${esc(g.name)}</button>`).join("");
   const el = document.getElementById("cols");
   // Columns share the width, but never get narrower than a readable leaderboard — then the page scrolls sideways.
   el.style.gridTemplateColumns = `repeat(${groups.length}, minmax(19rem, 1fr))`;
@@ -73,7 +112,7 @@ KPI.autoRefresh((data) => {
     const color = KPI.deptColor(g.name);
     const weekPill = vsWeek == null ? KPI.pill(null) : KPI.pill(vsWeek, KPI.vsAvg(vsWeek).replace("vs avg", "vs 7-day").replace("at avg", "= 7-day avg"));
     const others = dd.others.map((o) => `+ <b>${fmtNum(o.total)}</b> ${esc(o.unit)}`).join("<br>");
-    return `<section class="card col" style="--dc:${color}">
+    return `<section class="card col ${g.name === mSel ? "sel" : ""}" style="--dc:${color}">
       <div class="col-head">
         <div class="col-top"><div class="col-name"><span class="dept-dot" style="background:${color}"></span>${esc(g.name)}</div>${weekPill}</div>
         <div class="col-stats"><div class="col-avg">${dd.total == null ? "–" : fmtNum(dd.total)}<i>${esc(unit)}</i><small>Total ${esc(KPI.dayWord(day))}</small></div>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Admin · Production KPI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -128,20 +128,116 @@
   .toast::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
   .toast.error::before { background: var(--critical); }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  /* only on phones / tablets (the menus, the entry cards) */
+  .appmenu, .more-menu, .hint-m { display: none; }
+  .menu-pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; min-width: 220px; padding: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; }
+  .menu-pop a, .menu-pop button { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 8px; color: var(--ink); text-decoration: none; background: none; border: 0; font: inherit; font-weight: 500; cursor: pointer; text-align: left; }
+  .menu-pop a:hover, .menu-pop button:hover { background: var(--surface-2); }
+  .menu-pop svg { width: 18px; height: 18px; color: var(--accent-ink); }
+  .menu-pop .who { padding: 8px 12px 10px; margin-bottom: 4px; border-bottom: 1px solid var(--grid); color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+  details > summary { list-style: none; } details > summary::-webkit-details-marker { display: none; }
+
+  /* ───────── phones and tablets ───────── */
+  @media (max-width: 1023px) {
+    .appbar-in { padding: 10px 16px; gap: 8px; }
+    .appbar .icon-btn, .appmenu > summary { width: 44px; height: 44px; }
+    .screens, .appbar .who-inline, .appbar .sp { display: none; }
+    .appmenu, .more-menu { display: block; position: relative; }
+    .wrap { padding: 16px; }
+    .page-h { margin: 2px 0 12px; }
+    .page-h h1 { font-size: 21px; }
+    .page-h p { display: none; }
+    /* admin tabs: a segmented control at the top that scrolls sideways if it must */
+    .tabs { display: flex; width: 100%; margin-bottom: 14px; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tabs button { flex: 1 0 auto; min-height: 44px; padding: 0 10px; }
+    input, select { font-size: 16px; min-height: 44px; }
+    input[type="checkbox"] { min-height: 0; }
+    .btn { min-height: 44px; }
+    .toolbar .datebig, .hint-d, #export { display: none; }
+    .hint-m { display: block; margin: 0 0 12px; }
+    .toolbar { gap: 8px; margin-bottom: 12px; }
+    .toolbar #day { flex: 1 1 0; width: 0; min-width: 0; padding: 6px 8px; }
+    .toolbar #prev, .toolbar #next, .more-menu > summary { width: 44px; height: 44px; padding: 0; flex: 0 0 auto; }
+    .toolbar #today { padding: 0 12px; }
+    .toolbar .sp { display: none; }
+    /* department chips scroll sideways in one row */
+    .dtabs { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 2px 16px; scrollbar-width: none; flex: 1 1 100%; }
+    .dtabs::-webkit-scrollbar { display: none; }
+    .dtabs button { min-height: 44px; padding: 0 16px; }
+    .toolbar label.hint { display: none; }
+    .savebar { padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); margin-top: 12px; }
+    .savebar .btn.primary { min-height: 48px; padding: 0 22px; font-size: 15px; }
+    .toast { bottom: calc(86px + env(safe-area-inset-bottom)); max-width: calc(100vw - 32px); }
+
+    /* daily entry as cards: one per task, one row per person */
+    .ec { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: start; }
+    .ec-dept { grid-column: 1 / -1; margin: 10px 0 0; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; }
+    .ec-dept:first-child { margin-top: 0; }
+    .ec-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .ec-card.open { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+    .ec-h { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 14px; background: none; border: 0; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+    .ec-t { flex: 1; min-width: 0; font-size: 16px; font-weight: 600; }
+    .ec-t .m { color: var(--muted); font-weight: 500; margin-right: 6px; }
+    .ec-t small { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-top: 1px; }
+    .ec-s { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .ec-s b { display: block; font-size: 15px; }
+    .ec-s small { font-size: 12px; color: var(--muted); }
+    .ec-h > svg { width: 18px; height: 18px; color: var(--muted); flex: 0 0 auto; transition: transform .2s; }
+    .ec-card.open .ec-h > svg { transform: rotate(180deg); }
+    .ec-b { border-top: 1px solid var(--grid); padding: 4px 14px 10px; }
+    .ec-r { display: flex; align-items: center; gap: 10px; min-height: 56px; border-bottom: 1px solid var(--grid); }
+    .ec-r:last-of-type { border-bottom: 0; }
+    .ec-nm { flex: 1; min-width: 0; font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ec-nm small { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
+    .ec-r input { width: 42%; max-width: 170px; height: 46px; text-align: right; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .ec-r input::placeholder { font-weight: 400; color: var(--muted); font-size: 14px; }
+    .ec-more { width: 100%; min-height: 44px; margin-top: 6px; background: var(--surface-2); border: 1px dashed var(--axis); border-radius: 10px; color: var(--ink-2); font: inherit; font-weight: 600; cursor: pointer; }
+    .ec-others { border-top: 1px dashed var(--axis); margin-top: 6px; }
+
+    .jobs-h { flex-wrap: wrap; }
+    .jobs-h .hint { margin-left: 0; flex-basis: 100%; }
+    .jobs-add .btn, #add { width: 100%; }
+  }
+  @media (min-width: 721px) and (max-width: 1023px) {
+    .ec { max-width: 720px; }
+  }
+
+  /* ───────── phones: tables become one card per row ───────── */
   @media (max-width: 720px) {
-    .eg-wrap { max-height: 70vh; }
-    .eg .c-job { width: 140px; min-width: 140px; max-width: 140px; }
-    .eg .c-unit { left: 140px; }
-    .appbar .hide-sm { display: none; }
     .appbar .brand-eyebrow { display: none; }
-    .tcard { overflow: visible; }
-    table.t { display: block; }
+    .tcard { overflow: visible; background: none; border: 0; box-shadow: none; }
+    .jobs-card.tcard { margin-bottom: 18px; }
+    .jobs-h { padding: 4px 2px 10px; border: 0; }
+    .jobs-add { padding: 0; border: 0; }
+    table.t, table.t tbody { display: block; }
     table.t thead { display: none; }
-    table.t tbody { display: block; }
-    table.t tr { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px; border-bottom: 1px solid var(--grid); }
-    table.t td { display: block; padding: 0; border: 0; }
-    table.emp-table td:nth-child(1), table.emp-table td:nth-child(4) { grid-column: 1 / -1; }
-    table.t input.nm, table.t select { width: 100% !important; }
+    table.t tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 14px; margin-bottom: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+    table.t tbody tr:hover { background: var(--surface); }
+    table.t td { display: block; padding: 0; border: 0; min-width: 0; }
+    table.t td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 5px; font-size: 12px; font-weight: 600; color: var(--muted); }
+    table.t input, table.t select { width: 100% !important; max-width: none; }
+    .ord { gap: 8px; }
+    .ord .icon-btn { width: 44px; height: 44px; }
+    .btn.del { min-height: 44px; }
+    /* Tasks: machine, task, unit, then order + remove */
+    table.job-table td:nth-child(2), table.job-table td:nth-child(3), table.job-table td:nth-child(4) { grid-column: 1 / -1; }
+    table.job-table td:nth-child(1) { grid-row: 4; }
+    /* Departments: name, unit, people, then order + remove */
+    table.dept-table td:nth-child(2), table.dept-table td:nth-child(3), table.dept-table td:nth-child(4) { grid-column: 1 / -1; }
+    table.dept-table td:nth-child(1) { grid-row: 4; }
+    .dname input { max-width: none; }
+    /* Employees: photo + TV switch, then name, main department, other departments */
+    table.emp-table td:nth-child(2), table.emp-table td:nth-child(3), table.emp-table td:nth-child(4) { grid-column: 1 / -1; }
+    table.emp-table td:nth-child(5) { grid-column: 2; grid-row: 1; align-self: center; }
+    table.emp-table td:nth-child(5) label { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+    table.emp-table .ac { width: 22px !important; height: 22px; min-height: 0; }
+    .ph-act { gap: 8px; }
+    .linkbtn { font-size: 14px; min-height: 28px; }
+    .also-chips .chip { font-size: 13px; padding: 8px 12px; }
+    .dept-add { flex-direction: column; align-items: stretch; }
+    .dept-add input { width: 100% !important; }
+    .login { padding: 24px; }
   }
 </style>
 </head>
@@ -159,6 +255,14 @@ let deptFilter = "";
 let onlyMembers = true;  // with a department chosen: only its people as columns
 let entryEdits = {};     // daily entry: "jobId|name" ➜ typed text, until saved
 let dirty = false;
+// Phones and tablets get the entry as cards (one per task) instead of the wide sheet
+const NARROW = matchMedia("(max-width: 1023px)");
+NARROW.addEventListener("change", () => { if (data && tab === "entry" && document.getElementById("view")) viewEntry(); });
+const cardOpen = {};           // task id ➜ its entry card is open (remembered while switching tabs / days)
+const othersOpen = new Set();  // task ids whose card also lists people from other departments
+// Close an open ⋯ menu when tapping elsewhere or pressing Esc
+document.addEventListener("click", (e) => { document.querySelectorAll("details.appmenu[open], details.more-menu[open]").forEach((d) => { if (!d.contains(e.target)) d.open = false; }); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") document.querySelectorAll("details.appmenu[open], details.more-menu[open]").forEach((d) => (d.open = false)); });
 
 function toast(msg, error) {
   const t = document.getElementById("toast");
@@ -207,12 +311,17 @@ function shell() {
     <div class="appbar"><div class="appbar-in">
       <div class="brand"><div class="brand-mark">${KPI.ICONS.logo}</div><div class="brand-text"><div class="brand-eyebrow">${esc(CFG.COMPANY_NAME)}</div><div class="brand-title">Admin console</div></div></div>
       <span class="sp"></span>
-      ${KPI.signedInAs() ? `<span class="hint hide-sm">${esc(KPI.signedInAs())}</span>` : ""}
+      ${KPI.signedInAs() ? `<span class="hint who-inline">${esc(KPI.signedInAs())}</span>` : ""}
       <nav class="screens" aria-label="TV screens">
-        <a class="btn" href="tv-slides.html" title="Slideshow">${KPI.ICONS.play}<span class="hide-sm">Slideshow</span></a>
-        <a class="btn" href="tv-grid.html" title="Team grid">${KPI.ICONS.grid}<span class="hide-sm">Team grid</span></a>
-        <a class="btn" href="tv-departments.html" title="Departments">${KPI.ICONS.list}<span class="hide-sm">Departments</span></a>
+        <a class="btn" href="tv-slides.html" title="Slideshow">${KPI.ICONS.play}<span>Slideshow</span></a>
+        <a class="btn" href="tv-grid.html" title="Team grid">${KPI.ICONS.grid}<span>Team grid</span></a>
+        <a class="btn" href="tv-departments.html" title="Departments">${KPI.ICONS.list}<span>Departments</span></a>
       </nav>
+      <details class="appmenu"><summary class="icon-btn" aria-label="Menu: TV screens and account" title="Menu">${KPI.ICONS.more}</summary>
+        <div class="menu-pop">
+          ${KPI.signedInAs() ? `<div class="who">Signed in as<br><b>${esc(KPI.signedInAs())}</b></div>` : ""}
+          <a href="tv-slides.html">${KPI.ICONS.play}Slideshow</a><a href="tv-grid.html">${KPI.ICONS.grid}Team grid</a><a href="tv-departments.html">${KPI.ICONS.list}Departments</a>
+        </div></details>
       ${themeBtn()}
       <button class="icon-btn" id="lo" title="Log out" aria-label="Log out">${KPI.ICONS.logout}</button>
     </div></div>
@@ -260,17 +369,41 @@ function viewEntry() {
     if (!e.active && !has) return false;
     return !deptFilter || !onlyMembers || e.departments.includes(deptFilter) || has;
   });
+  const narrow = NARROW.matches;
   const cols = people.length + 3;
   let rows = "", last = null;
-  jobs.forEach((j) => {
+  if (!narrow) jobs.forEach((j) => {
     if (j.department !== last) {
       last = j.department;
       rows += `<tr class="g"><th colspan="${cols}"><span>${dot(j.department)}${esc(j.department || "No department")}</span></th></tr>`;
     }
-    rows += `<tr data-job="${j.id}"><th class="c-job" title="${esc(j.department + " · " + KPI.jobLabel(j))}">${j.machine ? `<span class="m">${esc(j.machine)}</span>` : ""}${esc(j.name)}${j.active ? "" : ' <span class="m">(removed)</span>'}</th><td class="c-unit">${esc(j.unit)}</td>
+    rows += `<tr data-job="${j.id}" data-unit="${esc(j.unit)}"><th class="c-job" title="${esc(j.department + " · " + KPI.jobLabel(j))}">${j.machine ? `<span class="m">${esc(j.machine)}</span>` : ""}${esc(j.name)}${j.active ? "" : ' <span class="m">(removed)</span>'}</th><td class="c-unit">${esc(j.unit)}</td>
       ${people.map((e, c) => `<td class="cell${e.departments.includes(j.department) ? "" : " off"}"><input inputmode="decimal" data-c="${c}" data-emp="${esc(e.name)}" value="${esc(text(key(j.id, e.name)))}" aria-label="${esc(e.name)} — ${esc(KPI.jobLabel(j))}"></td>`).join("")}
       <td class="c-tot"></td></tr>`;
   });
+  // Phones / tablets: one card per task; inside, the department's own people first, then (on request) everyone else
+  let cards = "";
+  if (narrow) {
+    const everyone = data.employees.filter((e) => e.active || jobs.some((j) => text(key(j.id, e.name)) !== ""));
+    const row = (e, j) => `<label class="ec-r">${KPI.avatar(e, { cls: "sm" })}<span class="ec-nm">${esc(e.name)}${e.departments.includes(j.department) ? "" : `<small>${esc(e.departments.join(", ") || "No department")}</small>`}</span>
+      <input inputmode="decimal" enterkeyhint="next" autocomplete="off" data-emp="${esc(e.name)}" value="${esc(text(key(j.id, e.name)))}" placeholder="${esc(j.unit)}" aria-label="${esc(e.name)} — ${esc(KPI.jobLabel(j))}"></label>`;
+    let lastD = null;
+    jobs.forEach((j) => {
+      if (!deptFilter && j.department !== lastD) { lastD = j.department; cards += `<h3 class="ec-dept">${dot(j.department)}${esc(j.department || "No department")}</h3>`; }
+      const mine = everyone.filter((e) => e.departments.includes(j.department)), others = everyone.filter((e) => !e.departments.includes(j.department));
+      const has = everyone.some((e) => text(key(j.id, e.name)) !== "");
+      const open = cardOpen[j.id] ?? (has || jobs.length === 1);
+      const showOthers = !mine.length || othersOpen.has(j.id) || others.some((e) => text(key(j.id, e.name)) !== "");
+      cards += `<section class="ec-card ${open ? "open" : ""}" data-job="${j.id}" data-unit="${esc(j.unit)}">
+        <button type="button" class="ec-h" aria-expanded="${open}" aria-controls="ecb-${j.id}">
+          <span class="ec-t">${j.machine ? `<span class="m">${esc(j.machine)}</span>` : ""}${esc(j.name)}${j.active ? "" : " (removed)"}<small>${esc(j.unit)}</small></span>
+          <span class="ec-s"><b class="c-tot"></b><small class="ec-n"></small></span>${KPI.ICONS.chevD}</button>
+        <div class="ec-b" id="ecb-${j.id}" ${open ? "" : "hidden"}>${mine.map((e) => row(e, j)).join("")}
+          ${others.length ? `${showOthers ? "" : `<button type="button" class="ec-more">+ ${others.length} ${others.length === 1 ? "person" : "people"} from other departments</button>`}
+          <div class="ec-others" ${showOthers ? "" : "hidden"}>${others.map((e) => row(e, j)).join("")}</div>` : ""}
+        </div></section>`;
+    });
+  }
   v.innerHTML = `
     <div class="toolbar">
       <button class="btn" id="prev" title="Previous day">◀</button>
@@ -280,6 +413,8 @@ function viewEntry() {
       <span class="datebig">${esc(KPI.fmtDate(entryDay, { weekday: "long", day: "numeric", month: "long", year: "numeric" }))}</span>
       <span class="sp"></span>
       <button class="btn" id="export" title="Download this day as a formatted Excel file (all departments)">${KPI.ICONS.download} Export Excel</button>
+      <details class="more-menu"><summary class="icon-btn" aria-label="More actions" title="More">${KPI.ICONS.more}</summary>
+        <div class="menu-pop"><button type="button" id="export-m">${KPI.ICONS.download}Export Excel</button></div></details>
     </div>
     <div class="toolbar">
       <nav class="dtabs" aria-label="Department">${["", ...depts].map((d) => {
@@ -289,10 +424,12 @@ function viewEntry() {
       <span class="sp"></span>
       ${deptFilter ? `<label class="hint"><input type="checkbox" id="members" ${onlyMembers ? "checked" : ""}> Only people in ${esc(deptFilter)}</label>` : ""}
     </div>
-    <p class="hint">Type each person's count in the row of the task they did, like the Excel sheet. Sums like <b>1500+250</b> work; leave blank for none.
+    <p class="hint hint-d">Type each person's count in the row of the task they did, like the Excel sheet. Sums like <b>1500+250</b> work; leave blank for none.
       <b>Enter</b> / arrow keys move between boxes, <b>Ctrl+S</b> saves. Shaded boxes = the person isn't in that department (you can still fill them).<br>
       <b>From Excel:</b> copy the day's sheet from the <i>Dept</i> / names row down, click any box and paste — every count lands in the right place.</p>
-    ${jobs.length && people.length ? `<div class="eg-wrap"><table class="eg" id="eg">
+    <p class="hint hint-m">Tap a task, then type each person's count. Sums like <b>1500+250</b> work; leave blank for none.</p>
+    ${narrow ? (cards ? `<div class="ec" id="ec">${cards}</div>` : `<p class="hint">No tasks yet — add them in the Tasks tab.</p>`)
+    : jobs.length && people.length ? `<div class="eg-wrap"><table class="eg" id="eg">
       <thead><tr><th class="c-job">Task</th><th class="c-unit">Unit</th>${people.map((e) => `<th class="c-p" title="${esc(e.departments.join(", "))}">${esc(e.name)}</th>`).join("")}<th class="c-tot">Total</th></tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr><th class="c-job">Tasks filled</th><td class="c-unit"></td>${people.map(() => "<td></td>").join("")}<td class="c-tot"></td></tr></tfoot>
@@ -306,13 +443,16 @@ function viewEntry() {
   document.getElementById("next").disabled = entryDay >= KPI.todayKey();
   document.getElementById("today").onclick = () => setDay(KPI.todayKey());
   v.querySelector(".dtabs").onclick = (e) => { const b = e.target.closest("[data-d]"); if (b) { deptFilter = b.dataset.d; viewEntry(); } };
+  if (narrow) v.querySelector(".dtabs .on")?.scrollIntoView({ block: "nearest", inline: "center" }); // the chosen chip stays in view
   const mem = document.getElementById("members");
   if (mem) mem.onchange = () => { onlyMembers = mem.checked; viewEntry(); };
 
   // Excel export of the whole day (every department, whatever tab is open), laid out like the sheet:
   // Dept / Machine / Task / Unit, then one column per person, row totals and "Tasks filled".
   // The file can be pasted back in: its names row and task columns match what paste expects.
-  document.getElementById("export").onclick = async () => {
+  document.getElementById("export-m").onclick = (e) => { e.target.closest("details").open = false; doExport(); };
+  document.getElementById("export").onclick = doExport;
+  async function doExport() {
     const btn = document.getElementById("export");
     if (Object.values(entryEdits).some((t) => Number.isNaN(KPI.parseQty(t)))) return toast("Fix the red boxes first — use numbers only", true);
     btn.disabled = true;
@@ -329,7 +469,7 @@ function viewEntry() {
       toast(`Downloaded ${a.download}${unsaved ? " — includes your unsaved changes" : ""}`);
     } catch (e) { toast("Export failed: " + e.message, true); }
     btn.disabled = false;
-  };
+  }
 
   // What changed compared with what is saved (all edits, including rows hidden by the filter)
   const changes = () => {
@@ -341,20 +481,24 @@ function viewEntry() {
     }
     return { out, bad };
   };
-  const eg = document.getElementById("eg");
+  const eg = document.getElementById("eg"), ec = document.getElementById("ec");
+  const box = eg || ec; // the sheet (wide screens) or the cards (phones / tablets)
   const paintCell = (i) => {
-    const k = key(i.closest("tr").dataset.job, i.dataset.emp);
+    const k = key(i.closest("[data-job]").dataset.job, i.dataset.emp);
     const q = KPI.parseQty(i.value);
     i.classList.toggle("bad", Number.isNaN(q));
     i.classList.toggle("changed", !Number.isNaN(q) && (q || null) !== (saved[k] || null));
   };
   const paintTotals = () => {
-    if (!eg) return;
-    eg.querySelectorAll("tbody tr[data-job]").forEach((tr) => {
-      const unit = tr.querySelector(".c-unit").textContent;
-      const sum = [...tr.querySelectorAll("input")].reduce((a, i) => a + (KPI.parseQty(i.value) || 0), 0);
-      tr.querySelector(".c-tot").textContent = sum ? `${KPI.fmtFull(sum)} ${unit}` : "";
+    if (!box) return;
+    box.querySelectorAll("[data-job]").forEach((row) => {
+      const qs = [...row.querySelectorAll("input")].map((i) => KPI.parseQty(i.value) || 0);
+      const sum = qs.reduce((a, b) => a + b, 0), n = qs.filter(Boolean).length;
+      row.querySelector(".c-tot").textContent = sum ? `${KPI.fmtFull(sum)} ${row.dataset.unit}` : ec ? "–" : "";
+      const who = row.querySelector(".ec-n");
+      if (who) who.textContent = n ? `${n} ${n === 1 ? "person" : "people"}` : "no counts";
     });
+    if (!eg) return;
     const foot = eg.querySelectorAll("tfoot td");
     people.forEach((e, c) => {
       const n = eg.querySelectorAll(`tbody input[data-c="${c}"]`);
@@ -378,13 +522,42 @@ function viewEntry() {
   };
   const edit = (i, value) => {
     if (value != null) i.value = value;
-    entryEdits[key(i.closest("tr").dataset.job, i.dataset.emp)] = i.value;
+    entryEdits[key(i.closest("[data-job]").dataset.job, i.dataset.emp)] = i.value;
     paintCell(i);
   };
-  if (eg) {
-    eg.querySelectorAll("tbody input").forEach(paintCell);
+  const revert = (i) => { edit(i, String(saved[key(i.closest("[data-job]").dataset.job, i.dataset.emp)] ?? "")); paintTotals(); refresh(); i.select(); };
+  if (box) {
+    box.querySelectorAll("input").forEach(paintCell);
     paintTotals();
-    eg.addEventListener("input", (e) => { edit(e.target); paintTotals(); refresh(); });
+    box.addEventListener("input", (e) => { if (!e.target.matches("input")) return; edit(e.target); paintTotals(); refresh(); });
+    box.addEventListener("paste", onPaste);
+  }
+  if (ec) {
+    // Tap a task to open / close it; "+ N people from other departments" shows the rest
+    ec.addEventListener("click", (e) => {
+      const h = e.target.closest(".ec-h");
+      if (h) {
+        const card = h.closest(".ec-card"), open = !card.classList.contains("open");
+        cardOpen[card.dataset.job] = open;
+        card.classList.toggle("open", open); h.setAttribute("aria-expanded", open);
+        card.querySelector(".ec-b").hidden = !open;
+      }
+      const more = e.target.closest(".ec-more");
+      if (more) { othersOpen.add(Number(more.closest(".ec-card").dataset.job)); more.nextElementSibling.hidden = false; more.remove(); }
+    });
+    // The keyboard's Next / Enter goes to the next person's box; Esc puts back the saved value
+    ec.addEventListener("keydown", (e) => {
+      const i = e.target.closest("input"); if (!i) return;
+      if (e.key === "Escape") return revert(i);
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const all = [...ec.querySelectorAll("input")].filter((x) => x.offsetParent);
+      const next = all[all.indexOf(i) + 1];
+      if (next) { next.focus(); next.select(); } else i.blur();
+    });
+    ec.addEventListener("focusin", (e) => { if (e.target.matches("input")) e.target.select(); });
+  }
+  if (eg) {
 
     // Keyboard: Enter / ↑ ↓ move up and down, ← → move sideways at the edge of the text (like Excel)
     const bodyRows = () => [...eg.querySelectorAll("tbody tr[data-job]")];
@@ -399,7 +572,7 @@ function viewEntry() {
         go(cellAt(rs[r + (e.key === "ArrowUp" || (e.key === "Enter" && e.shiftKey) ? -1 : 1)], c));
       } else if (e.key === "ArrowRight" && (all || i.selectionStart === i.value.length)) { e.preventDefault(); go(cellAt(rs[r], c + 1)); }
       else if (e.key === "ArrowLeft" && (all || i.selectionEnd === 0)) { e.preventDefault(); go(cellAt(rs[r], c - 1)); }
-      else if (e.key === "Escape") { const k = key(i.closest("tr").dataset.job, i.dataset.emp); edit(i, String(saved[k] ?? "")); paintTotals(); refresh(); i.select(); }
+      else if (e.key === "Escape") revert(i);
     });
     // Highlight the row and the person's column of the box being typed in
     eg.addEventListener("focusin", (e) => {
@@ -410,22 +583,24 @@ function viewEntry() {
       i.select();
     });
 
-    // Paste from Excel: a whole sheet (with the names row) goes by name and job; any other block fills from the box.
-    eg.addEventListener("paste", (e) => {
-      const i = e.target.closest("input"); if (!i) return;
-      const txt = (e.clipboardData || window.clipboardData).getData("text");
-      if (!/[\t\n]/.test(txt.replace(/\r?\n$/, ""))) return; // a single value: normal paste
-      e.preventDefault();
-      const grid = txt.replace(/\r/g, "").replace(/\n$/, "").split("\n").map((r) => r.split("\t"));
-      const names = new Map(data.employees.map((x) => [x.name.toLowerCase(), x.name]));
-      const h = grid.findIndex((r) => r.filter((c) => names.has(c.trim().toLowerCase())).length >= 2);
-      if (h >= 0) return pasteSheet(grid, h, names);
-      const rs = bodyRows(), r0 = rs.indexOf(i.closest("tr")), c0 = Number(i.dataset.c);
-      let n = 0;
-      grid.forEach((row, dr) => row.forEach((val, dc) => { const t = cellAt(rs[r0 + dr], c0 + dc); if (t) { edit(t, val.trim()); n++; } }));
-      paintTotals(); refresh();
-      toast(`Pasted ${n} box${n === 1 ? "" : "es"}`);
-    });
+  }
+  // Paste from Excel: a whole sheet (with the names row) goes by name and task; on the sheet,
+  // any other block fills the boxes from the one pasted into.
+  function onPaste(e) {
+    const i = e.target.closest("input"); if (!i) return;
+    const txt = (e.clipboardData || window.clipboardData).getData("text");
+    if (!/[\t\n]/.test(txt.replace(/\r?\n$/, ""))) return; // a single value: normal paste
+    e.preventDefault();
+    const grid = txt.replace(/\r/g, "").replace(/\n$/, "").split("\n").map((r) => r.split("\t"));
+    const names = new Map(data.employees.map((x) => [x.name.toLowerCase(), x.name]));
+    const h = grid.findIndex((r) => r.filter((c) => names.has(c.trim().toLowerCase())).length >= 2);
+    if (h >= 0) return pasteSheet(grid, h, names);
+    if (!eg) return toast("To paste from Excel, copy the whole day's sheet including the names row", true);
+    const rs = [...eg.querySelectorAll("tbody tr[data-job]")], r0 = rs.indexOf(i.closest("tr")), c0 = Number(i.dataset.c);
+    let n = 0;
+    grid.forEach((row, dr) => row.forEach((val, dc) => { const t = rs[r0 + dr]?.querySelector(`input[data-c="${c0 + dc}"]`); if (t) { edit(t, val.trim()); n++; } }));
+    paintTotals(); refresh();
+    toast(`Pasted ${n} box${n === 1 ? "" : "es"}`);
   }
   // A copied day sheet: columns matched by name, rows by department + machine/unit + job.
   function pasteSheet(grid, h, names) {
@@ -577,9 +752,9 @@ function viewJobs() {
   data.entries.forEach((e) => { counts[e.job] = (counts[e.job] || 0) + 1; });
   const row = (j = {}) => `<tr data-id="${j.id ?? ""}" data-n="${counts[j.id] || 0}">
     <td><div class="ord"><button type="button" class="icon-btn up" title="Move up" aria-label="Move up">${KPI.ICONS.chevU}</button><button type="button" class="icon-btn dn" title="Move down" aria-label="Move down">${KPI.ICONS.chevD}</button></div></td>
-    <td><input class="mc" value="${esc(j.machine || "")}" placeholder="—" aria-label="Machine or type (optional)"></td>
-    <td><input class="nm" value="${esc(j.name || "")}" placeholder="Task name" aria-label="Task name"></td>
-    <td><input class="un" value="${esc(j.unit || "")}" placeholder="pcs" aria-label="Unit"></td>
+    <td data-label="Machine / type (optional)"><input class="mc" value="${esc(j.machine || "")}" placeholder="—" aria-label="Machine or type (optional)"></td>
+    <td data-label="Task"><input class="nm" value="${esc(j.name || "")}" placeholder="Task name" aria-label="Task name"></td>
+    <td data-label="Unit"><input class="un" value="${esc(j.unit || "")}" placeholder="pcs" aria-label="Unit"></td>
     <td><button type="button" class="btn danger del">${KPI.ICONS.trash} Remove</button></td></tr>`;
   v.innerHTML = `<p class="hint">These are the rows of the <b>Daily entry</b> sheet, in the same order. <b>Machine / type</b> is optional (RT1, Collator 2 …).
     Each task has its own <b>unit</b>: people are compared with others who did the same task that day, and a department's total on the TV adds up the tasks counted in the department's unit (set in the Departments tab).
@@ -635,14 +810,14 @@ function viewDepartments() {
     Removing a department takes it off everyone's list and hides its tasks; their past counts stay saved.</p>
     <div class="card tcard"><table class="t dept-table"><thead><tr><th style="width:92px">Order</th><th>Department</th><th style="width:180px">Total counts</th><th>People</th><th style="width:110px"></th></tr></thead>
     <tbody id="tb">${data.departments.map((d) => row(d.name, d.unit, members(d.name))).join("")}</tbody></table></div>
-    <div class="toolbar" style="margin-top:12px"><input id="newname" placeholder="New department name"><input id="newunit" placeholder="Unit, e.g. sheets" style="width:160px"><button class="btn" id="add">+ Add department</button></div>
+    <div class="toolbar dept-add" style="margin-top:12px"><input id="newname" placeholder="New department name"><input id="newunit" placeholder="Unit, e.g. sheets" style="width:160px"><button class="btn" id="add">+ Add department</button></div>
     <div class="savebar"><button class="btn primary" id="save">Save departments</button><span class="hint" id="chg"></span></div>`;
   function row(name, unit, people = [], isNew = false) {
     return `<tr data-orig="${isNew ? "" : esc(name)}" data-people="${people.length}">
       <td><div class="ord"><button type="button" class="icon-btn up" title="Move up" aria-label="Move up">${KPI.ICONS.chevU}</button><button type="button" class="icon-btn dn" title="Move down" aria-label="Move down">${KPI.ICONS.chevD}</button></div></td>
-      <td><div class="dname"><span class="swatch"></span><input class="nm" value="${esc(name)}" aria-label="Department name"></div></td>
-      <td><input class="un" value="${esc(unit)}" placeholder="pcs" aria-label="Unit"></td>
-      <td class="hint">${people.length ? `${people.length} · ${esc(people.join(", "))}` : "—"}</td>
+      <td data-label="Department"><div class="dname"><span class="swatch"></span><input class="nm" value="${esc(name)}" aria-label="Department name"></div></td>
+      <td data-label="Total counts"><input class="un" value="${esc(unit)}" placeholder="pcs" aria-label="Unit"></td>
+      <td class="hint" data-label="People">${people.length ? `${people.length} · ${esc(people.join(", "))}` : "—"}</td>
       <td><button type="button" class="btn danger del">${KPI.ICONS.trash} Remove</button></td></tr>`;
   }
   const tb = document.getElementById("tb");
@@ -693,9 +868,9 @@ function viewEmployees() {
       <label class="ph-av" title="Upload photo">${KPI.avatar(e, { size: "48px" })}<span class="ph-cam">${KPI.ICONS.camera}</span><input type="file" accept="image/*" class="ph-in"></label>
       <div class="ph-act"><label class="linkbtn">Upload<input type="file" accept="image/*" class="ph-in"></label><button type="button" class="linkbtn danger ph-rm" ${e.photo ? "" : "hidden"}>Remove</button></div>
     </div></td>
-    <td><input class="nm" value="${esc(e.name)}" style="width:160px" aria-label="Name"></td>
-    <td><select class="dp" title="Main department" aria-label="Main department">${e.department ? "" : '<option value="">— choose —</option>'}${opts.map((d) => `<option ${d === e.department ? "selected" : ""}>${esc(d)}</option>`).join("")}</select></td>
-    <td><div class="chips also-chips">${opts.map((d) => { const on = e.departments.slice(1).includes(d); return `<label class="chip ${on ? "on" : ""}" ${d === e.department ? "hidden" : ""}><input type="checkbox" class="dp2" value="${esc(d)}" ${on ? "checked" : ""}>${esc(d)}</label>`; }).join("")}</div></td>
+    <td data-label="Name"><input class="nm" value="${esc(e.name)}" style="width:160px" aria-label="Name"></td>
+    <td data-label="Main department"><select class="dp" title="Main department" aria-label="Main department">${e.department ? "" : '<option value="">— choose —</option>'}${opts.map((d) => `<option ${d === e.department ? "selected" : ""}>${esc(d)}</option>`).join("")}</select></td>
+    <td data-label="Also works in"><div class="chips also-chips">${opts.map((d) => { const on = e.departments.slice(1).includes(d); return `<label class="chip ${on ? "on" : ""}" ${d === e.department ? "hidden" : ""}><input type="checkbox" class="dp2" value="${esc(d)}" ${on ? "checked" : ""}>${esc(d)}</label>`; }).join("")}</div></td>
     <td><label class="hint"><input type="checkbox" class="ac" ${e.active ? "checked" : ""}> Show</label></td></tr>`;
   };
   v.innerHTML = `<p class="hint">Click a picture (or <b>Upload</b>) to add a profile photo — it is cropped to a square and compressed automatically. Pick each person's <b>main department</b> and tick any others they also work in: that decides where they appear on the TV, and which rows of Daily entry are shaded for them. Untick <b>Show</b> to hide someone from the TV without deleting their history. Renaming keeps past counts linked.</p>

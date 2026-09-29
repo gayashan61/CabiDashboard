@@ -35,6 +35,7 @@
     close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
     trash: svg('<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>'),
     download: svg('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),
+    more: svg('<circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/>'),
   };
 
   // Day chosen with the header date picker (?date=YYYY-MM-DD). null = live (follows DISPLAY_DAY).
@@ -493,7 +494,7 @@
         </div>
         <div class="card panel"><div class="card-h"><h2 class="card-title">${day === todayKey() ? "Today's count" : "Count · " + esc(fmtDate(day))}</h2><span class="card-sub">tick = average of everyone on that task</span></div><div class="tasks">${todayRows}</div>
           <div class="card-h" style="margin-top:1.6rem"><h2 class="card-title">Trend <span class="card-sub">· ${esc(jobName)} · last 20 working days</span></h2></div>
-          <div class="chart-fill">${KPI.trendChart(trend, { values: "last", xLabels: 5, color, ref: mean(trend.map((t) => t.v).filter((v) => v != null)), refLabel: "avg" })}</div></div>
+          <div class="chart-fill">${KPI.trendChart(trend, { values: "last", xLabels: matchMedia("(max-width: 720px)").matches ? 3 : 5, color, ref: mean(trend.map((t) => t.v).filter((v) => v != null)), refLabel: "avg" })}</div></div>
         <div class="card panel"><div class="card-h"><h2 class="card-title">${KPI.PERIODS[per].title} <span class="card-sub">· ${KPI.PERIODS[per].sub}${unit ? " · " + esc(unit) : ""}</span></h2><div class="pbtns">${chips}<div class="pseg" role="group" aria-label="Chart period">${seg}</div></div></div>
           <div class="chart-area"><div class="cols7 n${bars.length}">${cols}</div></div>
           <div class="note">${esc(jobName)}${unit ? ` in ${esc(unit)}` : ""}${barAvg != null ? ` · average ${fmtFull(barAvg)} per ${per === "daily" ? "day" : per.replace(/ly$/, "")}` : ""}</div></div>`;

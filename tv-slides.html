@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Slideshow · Production KPI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -58,6 +58,38 @@
   .dept-row > div:first-child { display: flex; align-items: center; }
   .dept-row .bar { height: 1rem; }
   .dept-row .v { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* phones and tablets: the slide is normal page content; swipe or use the bar to change slides */
+  @media (max-width: 1023px) {
+    .stage { height: auto; touch-action: pan-y; }
+    .slide { position: relative; inset: auto; display: none; opacity: 1; transform: none; transition: none; }
+    .slide.on { display: grid; animation: slide-in .25s ease; }
+    .ov { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; gap: 12px; }
+    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .kpi { padding: 12px 14px; gap: 6px; }
+    .kpi-l { font-size: 0.9rem; flex-wrap: wrap; gap: 4px; }
+    .kpi-l .pill { font-size: 0.72rem; }
+    .kpi-v { font-size: 1.9rem; }
+    .kpi-v span { font-size: 0.95rem; }
+    .kpi-s { font-size: 0.78rem; }
+    .dtrend { grid-template-columns: 6.2rem minmax(0, 1fr) 5.4rem; gap: 10px; min-height: 3.4rem; flex: none; }
+    .dtrend-n { font-size: 0.95rem; }
+    .dtrend-v { font-size: 1.1rem; }
+    .dtrend-v small { font-size: 0.7rem; }
+    .lb-row { grid-template-columns: 1.8rem 2.8rem minmax(0, 1fr) auto; gap: 10px; }
+    .lb-row .av { --size: 2.8rem !important; }
+    .lb-rank { width: 1.8rem; height: 1.8rem; font-size: 0.95rem; }
+    .lb-name { font-size: 1.05rem; }
+    .lb-name small { font-size: 0.8rem; }
+    .lb-val { font-size: 1.15rem; }
+    .lb-val em { font-size: 0.75rem; }
+    .slidebar { position: sticky; bottom: calc(66px + env(safe-area-inset-bottom)); z-index: 20; padding: 8px 16px; gap: 10px; }
+    .kiosk .slidebar { bottom: 0; }
+    .slidebar .lbl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .slide-ctrl .icon-btn { width: 44px; height: 44px; }
+  }
+  @media (max-width: 720px) { .progress { display: none; } }
+  @keyframes slide-in { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
 
 </style>
 </head>
@@ -174,6 +206,16 @@ function tick() {
 }
 
 setInterval(tick, 150);
+// Phones and tablets: swipe to change slides, and nothing moves on its own until ▶ is pressed
+let touch = null;
+document.getElementById("stage").addEventListener("touchstart", (e) => { touch = e.touches.length === 1 ? [e.touches[0].clientX, e.touches[0].clientY] : null; }, { passive: true });
+document.getElementById("stage").addEventListener("touchend", (e) => {
+  if (!touch) return;
+  const dx = e.changedTouches[0].clientX - touch[0], dy = e.changedTouches[0].clientY - touch[1];
+  touch = null;
+  if (Math.abs(dx) >= 60 && Math.abs(dx) > Math.abs(dy) * 1.5) { go(idx + (dx < 0 ? 1 : -1)); window.scrollTo(0, 0); }
+});
+if (matchMedia("(pointer: coarse) and (max-width: 1023px)").matches) setPaused(true);
 document.getElementById("prev").innerHTML = ICONS.chevL;
 document.getElementById("next").innerHTML = ICONS.chevR;
 document.getElementById("play").innerHTML = ICONS.pause;
