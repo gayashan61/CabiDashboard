@@ -145,7 +145,7 @@
   const AVG_TICK = 100 / BAR_MAX;
 
   // The company logo (on a white tile, see .brand-mark) — used in every header, the start page and sign-in
-  const LOGO = `<img src="assets/logo.png" alt="${String(CFG.APP_NAME || "TilJay").replace(/"/g, "")} logo" width="256" height="256" decoding="async">`;
+  const LOGO = `<img src="assets/logo.png" alt="${String(CFG.APP_NAME || "Tiljay").replace(/"/g, "")} logo" width="256" height="256" decoding="async">`;
 
   const KPI = {
     CFG, ICONS, LOGO, dayKey, parseDay, addDays, todayKey, fmtNum, fmtFull, fmtDate, parseQty, esc, mean,

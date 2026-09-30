@@ -1,6 +1,6 @@
-# TilJay CF Pro
+# Tiljay CF Pro
 
-**TilJay Computer Forms Production** — a production performance dashboard for a wall TV. It is a plain static website (no build step), hosted free on **Vercel**, with data stored in **Supabase** (free Postgres).
+**Tiljay Computer Forms Production** — a production performance dashboard for a wall TV. It is a plain static website (no build step), hosted free on **Vercel**, with data stored in **Supabase** (free Postgres).
 
 Each day the admin fills in a sheet laid out like the client's Excel file: **tasks down the side** (grouped by department, e.g. Sheets → RT1 → Blank) and **people across the top**, one count per person per task. Each task has its own unit (sheets, sets, boxes, rolls …). There are no targets. Colours compare each person's count with the **average of everyone who did the same task that day**.
 
