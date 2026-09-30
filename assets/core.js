@@ -271,14 +271,16 @@
       const today = KPI.empDay(data, emp.name, day);
       const week = KPI.workDays(day, 7).map((d) => KPI.empDay(data, emp.name, d));
       // Their tasks listed main department first, then their other departments (sheet order within each).
-      // The big number is their biggest count in the first of those departments they worked in today.
+      // The big number is their biggest count in their MAIN department only: none there today = "–",
+      // so it's plain they didn't work there (their other counts are listed underneath).
       const rank = (d) => { const i = emp.departments.indexOf(d); return i < 0 ? 99 : i; };
       today.parts.sort((a, b) => rank(a.dept) - rank(b.dept));
-      const mainPart = KPI.topPart(today.parts.filter((t) => t.dept === today.parts[0]?.dept));
-      // The job their small charts follow: today's main one, else the one they do most
-      const mainJob = mainPart?.id ?? KPI.recentJobs(data, emp.name)[0] ?? null;
+      const mainDept = emp.department || today.parts[0]?.dept || "";
+      const mainPart = KPI.topPart(today.parts.filter((t) => t.dept === mainDept));
+      // The task their small charts follow: today's main one, else the main-department task they do most
+      const mainJob = mainPart?.id ?? KPI.recentJobs(data, emp.name).find((id) => data.jobById[id]?.department === mainDept) ?? null;
       return {
-        ...emp, today, mainPart, mainJob,
+        ...emp, today, mainDept, mainPart, mainJob,
         weekIndex: mean(week.map((w) => w.index).filter((v) => v != null)),
         daysWorked: week.filter((w) => w.has).length,
         mainWeekAvg: KPI.weekAvg(data, emp.name, mainJob, day),
@@ -466,7 +468,8 @@
       const st = status(p.today.index); // colour = all their jobs today against each job's average
       // Job the charts show: chosen chip, else today's main one (or the one they do most)
       const choices = [...new Set([...p.today.parts.map((t) => t.id), ...KPI.recentJobs(data, p.name)])].slice(0, 4);
-      const cj = data.jobById[chartJob[p.name]] ? chartJob[p.name] : p.mainJob;
+      // (no main-department task yet: open on a task they did today)
+      const cj = data.jobById[chartJob[p.name]] ? chartJob[p.name] : p.mainJob ?? p.today.parts[0]?.id ?? KPI.recentJobs(data, p.name)[0] ?? null;
       if (cj != null && !choices.includes(cj)) choices.unshift(cj);
       const job = data.jobById[cj];
       const color = KPI.deptColor(job?.department), unit = job?.unit || "";
@@ -497,7 +500,7 @@
           ${KPI.avatar(p, { cls: "xl", ring: st.key })}
           <div class="ps-id"><div class="ps-name">${esc(p.name)}</div><div class="ps-dept">${KPI.deptLabel(p)}</div></div>
           <div class="ps-mini"><div>7-day avg<b>${fmtNum(KPI.weekAvg(data, p.name, cj, day))}</b></div><div>Best day<b>${best < 0 ? "–" : fmtNum(best)}</b></div><div>Days worked<b>${p.daysWorked}</b></div></div>
-          <div class="ps-score"><div class="big st-${st.key}">${p.mainPart ? fmtFull(p.mainPart.qty) : "–"}<small>${p.mainPart ? esc(p.mainPart.unit) : ""}</small></div>${KPI.pill(p.today.index, p.mainPart ? `${st.label} · ${p.mainPart.label}` : "No entry yet")}</div>
+          <div class="ps-score"><div class="big st-${p.mainPart ? st.key : "none"}">${p.mainPart ? fmtFull(p.mainPart.qty) : "–"}<small>${p.mainPart ? esc(p.mainPart.unit) : p.today.has ? "No " + esc(p.mainDept) + " count" : ""}</small></div>${KPI.pill(p.today.index, p.mainPart ? `${st.label} · ${p.mainPart.label}` : p.today.has ? `${st.label} · other departments` : "No entry yet")}</div>
         </div>
         <div class="card panel"><div class="card-h"><h2 class="card-title">${day === todayKey() ? "Today's count" : "Count · " + esc(fmtDate(day))}</h2><span class="card-sub">tick = average of everyone on that task</span></div><div class="tasks">${todayRows}</div>
           <div class="card-h" style="margin-top:1.6rem"><h2 class="card-title">Trend <span class="card-sub">· ${esc(jobName)} · last 20 working days</span></h2></div>

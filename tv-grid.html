@@ -26,6 +26,7 @@
   .tile-score { font-size: 2.7rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .tile-score small { font-size: 0.95rem; font-weight: 600; letter-spacing: 0; color: var(--muted); margin-left: 0.3rem; }
   .tile.none .tile-score { font-size: 1.6rem; font-weight: 600; letter-spacing: 0; color: var(--muted); }
+  .tile-score.away { color: var(--muted); }
   .tile-bar .bar { height: 0.45rem; }
   .tile-tasks { font-size: 0.86rem; color: var(--ink-2); display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.2rem; }
   .tile-tasks div { display: flex; justify-content: space-between; gap: 0.5rem; white-space: nowrap; }
@@ -137,7 +138,7 @@ document.getElementById("legend").innerHTML =
   `${KPI.pill(CFG.THRESHOLDS.good / 100, `Above avg ≥ ${CFG.THRESHOLDS.good}%`)}
    ${KPI.pill(CFG.THRESHOLDS.warning / 100, `Near avg ${CFG.THRESHOLDS.warning}–${CFG.THRESHOLDS.good - 1}%`)}
    ${KPI.pill(0, `Below avg < ${CFG.THRESHOLDS.warning}%`)}
-   <span class="legend-item">Big number = their biggest count in their main department today · colour = compared with the average of everyone on the same task today · trend = last 14 working days</span>`;
+   <span class="legend-item">Big number = their biggest count in their main department today (– = none there) · colour = compared with the average of everyone on the same task today · trend = last 14 working days</span>`;
 
 const $ = (id) => document.getElementById(id);
 let state = { data: null, day: null, people: [] };
@@ -185,7 +186,7 @@ function drawList() {
     return `<div class="mt ${st.key} ${p.name === selected ? "sel" : ""}" role="button" tabindex="0" data-name="${esc(p.name)}" title="${esc(p.name)} · ${esc(p.departments.join(", "))}">
       ${KPI.avatar(p, { cls: "md", ring: st.key })}
       <div class="mt-name">${esc(p.name)}</div>
-      <div class="mt-score ${mp ? "st-" + st.key : "muted"}">${mp ? `${fmtNum(mp.qty)}<small>${esc(mp.unit)}</small>` : "No entry"}</div>
+      <div class="mt-score ${mp ? "st-" + st.key : "muted"}" ${!mp && p.today.has ? `title="No ${esc(p.mainDept)} count today"` : ""}>${mp ? `${fmtNum(mp.qty)}<small>${esc(mp.unit)}</small>` : p.today.has ? "–" : "No entry"}</div>
     </div>`;
   }).join("") || `<div class="empty">No one matches “${esc($("pf-q").value.trim())}”</div>`;
 }
@@ -231,19 +232,20 @@ KPI.autoRefresh((data) => {
   grid.style.gridTemplateRows = `repeat(${Math.ceil(n / cols)}, minmax(15.5rem, 1fr))`;
   if (!n) { grid.innerHTML = '<div class="empty">No employees yet — add them from the Admin page.</div>'; return; }
   grid.innerHTML = people.map((p) => {
-    // Colour = their counts against each job's average today; big number = their biggest count in their main department
+    // Colour = their counts against each job's average today; big number = their biggest count in their main department,
+    // or "–" when they only worked in other departments today (those counts are listed underneath)
     const st = status(p.today.index);
-    const mp = p.mainPart;
+    const mp = p.mainPart, away = !mp && p.today.has;
     // One job: its average for comparison. Several: each job's count.
     const jobLine = (t, right) => `<div><span title="${esc(t.dept)}"><span class="dept-dot" style="background:${KPI.deptColor(t.dept)}"></span>${esc(t.label)}</span><b>${right}</b></div>`;
     const parts = p.today.parts, more = parts.length - 3;
-    const lines = parts.length === 1
+    const lines = parts.length === 1 && mp
       ? jobLine(mp, mp.n > 1 ? `<i>avg </i>${fmtNum(mp.avg)}` : "<i>only one</i>")
       : parts.slice(0, more > 0 ? 2 : 3).map((t) => jobLine(t, `${fmtNum(t.qty)}<i> ${esc(t.unit)}</i>`)).join("")
         + (more > 0 ? `<div><span>+ ${more + 1} more tasks</span></div>` : "");
     return `<div class="card tile ${st.key}" role="button" tabindex="0" data-name="${esc(p.name)}" title="Open ${esc(p.name)}’s profile">
       <div class="tile-top">${KPI.avatar(p, { cls: "lg", ring: st.key })}<div class="tile-id"><div class="tile-name">${esc(p.name)}</div><div class="tile-dept">${KPI.deptLabel(p)}</div></div></div>
-      <div class="tile-mid"><div class="tile-score ${mp ? "st-" + st.key : ""}">${mp ? `${fmtNum(mp.qty)}<small>${esc(mp.unit)}</small>` : "No entry yet"}</div>${mp ? KPI.pill(p.today.index) : ""}</div>
+      <div class="tile-mid"><div class="tile-score ${mp ? "st-" + st.key : away ? "away" : ""}">${mp ? `${fmtNum(mp.qty)}<small>${esc(mp.unit)}</small>` : away ? `–<small>No ${esc(p.mainDept)} count</small>` : "No entry yet"}</div>${mp ? KPI.pill(p.today.index) : ""}</div>
       ${mp ? `<div class="tile-bar"><div class="bar"><span class="bg-${st.key}" style="width:${KPI.ratioW(p.today.index)}%"></span><i class="tgt" style="left:${KPI.AVG_TICK}%"></i></div></div>` : ""}
       <div class="tile-tasks">${lines}</div>
       <div class="tile-foot"><div class="tile-spark">${KPI.trendChart(KPI.empJobSeries(data, p.name, p.mainJob, day, 14), { mini: true, color: KPI.deptColor(data.jobById[p.mainJob]?.department) })}</div>
