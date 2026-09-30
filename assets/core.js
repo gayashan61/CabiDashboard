@@ -144,8 +144,11 @@
   const ratioW = (r) => (r == null ? 0 : Math.min(r, BAR_MAX) / BAR_MAX * 100);
   const AVG_TICK = 100 / BAR_MAX;
 
+  // The company logo (on a white tile, see .brand-mark) — used in every header, the start page and sign-in
+  const LOGO = `<img src="assets/logo.png" alt="${String(CFG.APP_NAME || "TilJay").replace(/"/g, "")} logo" width="256" height="256" decoding="async">`;
+
   const KPI = {
-    CFG, ICONS, dayKey, parseDay, addDays, todayKey, fmtNum, fmtFull, fmtDate, parseQty, esc, mean,
+    CFG, ICONS, LOGO, dayKey, parseDay, addDays, todayKey, fmtNum, fmtFull, fmtDate, parseQty, esc, mean,
     DB_OUTDATED, status, vsAvg, ratioW, AVG_TICK,
 
     async load(days = 60) {
@@ -544,8 +547,8 @@
       const views = [["tv-slides.html", "Slideshow", ICONS.play], ["tv-grid.html", "Team grid", ICONS.grid], ["tv-departments.html", "Departments", ICONS.list]];
       const qs = KPI.linkQs();
       el.innerHTML = `
-        <a class="brand" href="index.html${qs}" data-nav="index.html" title="Home" style="color:inherit;text-decoration:none"><div class="brand-mark">${ICONS.logo}</div>
-          <div class="brand-text"><div class="brand-eyebrow">${esc(CFG.COMPANY_NAME)}</div><div class="brand-title">${esc(title)}</div></div></a>
+        <a class="brand" href="index.html${qs}" data-nav="index.html" title="Home" style="color:inherit;text-decoration:none"><div class="brand-mark">${LOGO}</div>
+          <div class="brand-text"><div class="brand-eyebrow">${esc(CFG.APP_NAME || CFG.COMPANY_NAME)}</div><div class="brand-title">${esc(title)}</div></div></a>
         <nav class="seg" aria-label="Views">${views.map(([h, l, i]) => `<a href="${h}${qs}" data-nav="${h}" class="${h === active ? "on" : ""}">${i}${l}</a>`).join("")}</nav>
         <div class="hdr-spacer"></div>
         <div class="hdr-date">

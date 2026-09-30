@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-//  Production KPI Dashboard — configuration
+//  TilJay CF Pro — configuration
 //  Departments, tasks, employees and daily counts are managed in the Admin page (stored in Supabase).
 // ─────────────────────────────────────────────────────────────
 window.KPI_CONFIG = {
@@ -9,7 +9,8 @@ window.KPI_CONFIG = {
   SUPABASE_URL: "https://bbhtejcxjytxmnxfsjxx.supabase.co",
   SUPABASE_KEY: "sb_publishable_xBmWeRYsCp1gP2ChF2_oXw_81jR2Pzy",
 
-  COMPANY_NAME: "Production Performance",
+  APP_NAME: "TilJay CF Pro",
+  COMPANY_NAME: "TilJay Computer Forms Production",
 
   // Which day the TV screens show as "Today":
   //  "latest" = the most recent day (up to today) that has any counts — good if data is entered at end of shift

@@ -1,6 +1,6 @@
-# Production KPI Dashboard
+# TilJay CF Pro
 
-A performance dashboard for a wall TV. It is a plain static website (no build step), hosted free on **Vercel**, with data stored in **Supabase** (free Postgres).
+**TilJay Computer Forms Production** — a production performance dashboard for a wall TV. It is a plain static website (no build step), hosted free on **Vercel**, with data stored in **Supabase** (free Postgres).
 
 Each day the admin fills in a sheet laid out like the client's Excel file: **tasks down the side** (grouped by department, e.g. Sheets → RT1 → Blank) and **people across the top**, one count per person per task. Each task has its own unit (sheets, sets, boxes, rolls …). There are no targets. Colours compare each person's count with the **average of everyone who did the same task that day**.
 
@@ -25,6 +25,7 @@ Each day the admin fills in a sheet laid out like the client's Excel file: **tas
 - **Slideshow:** ◀ ⏸ ▶ in the bottom bar, or Space to pause and ← → to move.
 - **Team grid:** click a person to open their profile, with the rest of the team and a search box on the right. Esc goes back.
 - **More people than fit:** the grid and each department column scroll instead of shrinking.
+- **Name and logo:** the app name and company name are `APP_NAME` and `COMPANY_NAME` in `assets/config.js`. The logo is `assets/logo.png` (with `favicon.png` for the browser tab and `apple-touch-icon.png` for phone home screens); replace those files to change it.
 - **Light and dark themes:** use the sun/moon button. To lock a TV to one theme, add `?theme=light` or `?theme=dark` to its link. The default for everyone is `DEFAULT_THEME` in `assets/config.js`.
 - **Kiosk mode:** add `&kiosk=1` to a TV link, for example `tv-slides.html?theme=dark&kiosk=1`, to hide the buttons and navigation.
 
