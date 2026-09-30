@@ -15,7 +15,7 @@ Each day the admin fills in a sheet laid out like the client's Excel file: **tas
 ### How the numbers work
 - **Count**: what a person made on one task that day, in that task's unit (for example 12,500 *sheets* on RT1 Blank).
 - 🟢 **Above avg**: at or above the average of everyone who did that task that day. 🟡 **Near avg**: 80–99% of it. 🔴 **Below avg**: under 80%. The tick on each bar marks the average. Someone who was alone on a task that day shows "only one" (counted as at average). Change the bands with `THRESHOLDS` in `assets/config.js`.
-- People who did several tasks get one colour for the day: the average of how they did on each task. Their tile's big number is their biggest count, with their tasks listed underneath.
+- People who did several tasks get one colour for the day: the average of how they did on each task. Their tile's big number is their biggest count in their **main department** (the first one in Employees; if they did nothing there that day, their next department). Their tasks are listed underneath, main department first.
 - **Department total**: adds up the department's tasks counted in the department's unit (Departments tab). Tasks in other units are shown next to it, e.g. *1,050 boxes + 750 sheets*. Department leaderboards rank people against the task averages, not by raw count, because units differ.
 - **7-day avg**: the average count per working day on that task over the last 7 working days on which they had a count.
 - **Profile chart**: **Daily** shows counts for the last 7 working days. **Weekly**, **Monthly** and **Yearly** show totals. It follows one task at a time; people who do several tasks can switch with the chips above the chart.

@@ -264,13 +264,17 @@
     },
     // Jobs a person has done lately, most frequent first (for their profile chart)
     recentJobs(data, name) { return data.jobsByEmp[name] || []; },
-    // Their biggest count of the day — the one shown in big numbers
+    // The biggest count among these tasks
     topPart(parts) { return parts.reduce((a, b) => (!a || b.qty > a.qty ? b : a), null); },
 
     empSummary(data, emp, day) {
       const today = KPI.empDay(data, emp.name, day);
       const week = KPI.workDays(day, 7).map((d) => KPI.empDay(data, emp.name, d));
-      const mainPart = KPI.topPart(today.parts);
+      // Their tasks listed main department first, then their other departments (sheet order within each).
+      // The big number is their biggest count in the first of those departments they worked in today.
+      const rank = (d) => { const i = emp.departments.indexOf(d); return i < 0 ? 99 : i; };
+      today.parts.sort((a, b) => rank(a.dept) - rank(b.dept));
+      const mainPart = KPI.topPart(today.parts.filter((t) => t.dept === today.parts[0]?.dept));
       // The job their small charts follow: today's main one, else the one they do most
       const mainJob = mainPart?.id ?? KPI.recentJobs(data, emp.name)[0] ?? null;
       return {
