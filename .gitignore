@@ -1,0 +1,7 @@
+# The client's own files (the repository is public)
+docs/
+
+# Local AI assistant settings and installed skills (not part of the dashboard)
+.claude/
+.agents/
+skills-lock.json
