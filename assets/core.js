@@ -42,6 +42,7 @@
     key: svg('<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/>'),
     tasks: svg('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/>'),
     more: svg('<circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/>'),
+    inbox: svg('<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>'),
   };
 
   // Day chosen with the header date picker (?date=YYYY-MM-DD). null = live (follows DISPLAY_DAY).
@@ -149,6 +150,14 @@
     return s.includes("@") ? s : `${s}@${CFG.LOGIN_DOMAIN || "tiljay.local"}`;
   };
   // Signed out or not allowed: send this screen to the sign-in page, which brings them back afterwards
+  // tone (colour), icon, label
+  const NOTE_LOOK = {
+    approved:   ["good", "check", "Approved"],
+    edited:     ["warning", "edit", "Changed"],
+    rejected:   ["critical", "x", "Rejected"],
+    assignment: ["accent", "tasks", "New task"],
+    submission: ["violet", "inbox", "To approve"],
+  };
   const isAuthProblem = (m) => /sign in|not allowed|can't open the team screens|isn't linked/i.test(m || "");
   const goSignIn = () => {
     const here = location.pathname.split("/").pop() || "index.html";
@@ -223,6 +232,15 @@
     async readNotifications(ids = null) { await sbRpc("read_notifications", { p_ids: ids }); },
     // { unread, pending (admins), latest } — cheap, for the badges
     async inbox() { return sbRpc("inbox", {}); },
+    // A notification as a card: colour band, icon and label by what happened (approved / changed / rejected,
+    // new task, count to approve). `tag` = "button" when it can be tapped.
+    noteHTML(n, when, tag = "div") {
+      const [tone, icon, label] = NOTE_LOOK[n.kind === "review" ? n.data?.status : n.kind] || ["none", "bell", "Notice"];
+      return `<${tag} ${tag === "button" ? 'type="button" ' : ""}class="nt tone-${tone} ${n.read ? "" : "new"}" data-kind="${esc(n.kind)}" data-date="${esc(n.data?.date || "")}">
+        <span class="nt-ic">${ICONS[icon]}</span>
+        <span class="nt-tx"><span class="nt-h"><b>${esc(n.title)}</b><em class="nt-tag">${label}</em></span>
+          <span class="nt-b">${esc(n.body)}</span><small>${esc(when)}${n.read ? "" : ' · <i class="nt-new">New</i>'}</small></span></${tag}>`;
+    },
 
     // ───────── admin ─────────
     async adminData() { return sbRpc("admin_data", {}); },

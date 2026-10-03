@@ -127,11 +127,10 @@
   .tbadge { margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--critical); color: #fff; font-size: 11px; font-weight: 700; }
   .bell-pop { width: min(360px, calc(100vw - 32px)); max-height: 70vh; overflow-y: auto; }
   .bell-pop[hidden] { display: none; }
-  .bell-pop .nt { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 0; padding: 10px 12px; border-bottom: 1px solid var(--grid); border-radius: 0; text-align: left; }
-  .bell-pop .nt:last-child { border-bottom: 0; }
-  .bell-pop .nt span { color: var(--ink-2); font-weight: 400; font-size: 13px; }
-  .bell-pop .nt small { color: var(--muted); font-size: 12px; }
-  .bell-pop .nt.new { background: var(--accent-soft); }
+  .bell-pop { padding: 8px; gap: 6px; }
+  .bell-pop .nt { font: inherit; color: inherit; cursor: pointer; width: 100%; margin: 0; padding: 10px 12px; gap: 10px; }
+  .bell-pop .nt .nt-ic { width: 30px; height: 30px; }
+  .bell-pop .nt .nt-b { font-size: 13px; }
   /* approvals */
   .appr { background: var(--surface); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; box-shadow: var(--shadow); }
   .ap-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -428,8 +427,13 @@ async function openBell() {
   pop.innerHTML = `<div class="who">Loading…</div>`;
   try {
     const list = await KPI.notifications(30);
-    pop.innerHTML = list.length ? list.map((n) => `<button type="button" class="nt ${n.read ? "" : "new"}" data-kind="${esc(n.kind)}">
-        <b>${esc(n.title)}</b><span>${esc(n.body)}</span><small>${esc(ago(n.created_at))}</small></button>`).join("")
+    // a count to approve opens the approvals in Daily entry
+    pop.onclick = (e) => {
+      const b = e.target.closest(".nt"); if (!b) return;
+      pop.hidden = true;
+      if (b.dataset.kind === "submission") { tab = "entry"; renderTab(); document.getElementById("appr")?.scrollIntoView({ block: "start" }); }
+    };
+    pop.innerHTML = list.length ? list.map((n) => KPI.noteHTML(n, ago(n.created_at), "button")).join("")
       : `<div class="who">No notifications yet</div>`;
     if (list.some((n) => !n.read)) { await KPI.readNotifications(); paintBadges({ ...(lastInbox || {}), unread: 0 }); }
   } catch (e) { pop.innerHTML = `<div class="who">${esc(e.message)}</div>`; }

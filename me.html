@@ -68,10 +68,6 @@
   .hist-row .q { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
   .hist-row .q small { display: block; font-weight: 500; }
   /* notifications */
-  .nt { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 3px; }
-  .nt.new { border-color: var(--accent); background: var(--accent-soft); }
-  .nt span { color: var(--ink-2); font-size: 14px; }
-  .nt small { color: var(--muted); font-size: 12px; }
   .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translate(-50%, 8px); max-width: calc(100vw - 32px); background: var(--ink); color: var(--page); padding: 12px 18px; border-radius: 12px; font-weight: 600; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; z-index: 30; box-shadow: var(--shadow-lg); }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
   .toast.error { background: var(--critical); color: #fff; }
@@ -221,8 +217,14 @@ async function paneNotes() {
   p.innerHTML = `<p class="hint">Loading…</p>`;
   try {
     const list = await KPI.notifications(50);
-    p.innerHTML = list.length ? list.map((n) => `<div class="nt ${n.read ? "" : "new"}"><b>${esc(n.title)}</b><span>${esc(n.body)}</span><small>${esc(new Date(n.created_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }))}</small></div>`).join("")
+    p.innerHTML = list.length ? list.map((n) => KPI.noteHTML(n, new Date(n.created_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }), "button")).join("")
       : `<div class="empty-card">No notifications yet.</div>`;
+    // tapping one opens My tasks (on that count's day, when it can still be changed)
+    p.onclick = (e) => {
+      const b = e.target.closest(".nt"); if (!b) return;
+      if (b.dataset.date && b.dataset.date >= minDay() && b.dataset.date <= KPI.todayKey()) day = b.dataset.date;
+      tab = "today"; history.replaceState(null, "", "#"); render(); scrollTo(0, 0);
+    };
     if (list.some((n) => !n.read)) { await KPI.readNotifications(); data.unread = 0; paintBadge(0); }
   } catch (e) { p.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
 }
