@@ -5,3 +5,9 @@ docs/
 .claude/
 .agents/
 skills-lock.json
+
+# Android app: dependencies, build output, and Firebase settings (kept private)
+mobile/node_modules/
+mobile/dist/
+mobile/build.log
+mobile/android/app/google-services.json

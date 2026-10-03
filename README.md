@@ -2,15 +2,18 @@
 
 **Tiljay Computer Forms Production** — a production performance dashboard for a wall TV. It is a plain static website (no build step), hosted free on **Vercel**, with data stored in **Supabase** (free Postgres).
 
-Each day the admin fills in a sheet laid out like the client's Excel file: **tasks down the side** (grouped by department, e.g. Sheets → RT1 → Blank) and **people across the top**, one count per person per task. Each task has its own unit (sheets, sets, boxes, rolls …). There are no targets. Colours compare each person's count with the **average of everyone who did the same task that day**.
+Everyone signs in. The **admin** sees every screen and the admin console; **TV accounts** show the wall screens; each **employee** sees only their own page, where they send counts for their tasks for the admin to approve. There is also an **Android app** (the same site, with push notifications).
+
+Each day the admin fills in (or approves) a sheet laid out like the client's Excel file: **tasks down the side** (grouped by department, e.g. Sheets → RT1 → Blank) and **people across the top**, one count per person per task. Each task has its own unit (sheets, sets, boxes, rolls …). There are no targets. Colours compare each person's count with the **average of everyone who did the same task that day**.
 
 | Page | What it's for |
 |---|---|
-| `index.html` | Start page with links to every screen |
+| `index.html` | **Sign in** for everyone, then the screen list (admins, TV accounts); employees go to their own page |
+| `me.html` | **Employee's page**: their tasks (send a count for the day), the admin's decisions, their performance and history, notifications |
 | `tv-slides.html` | **Slideshow**: department totals and top performers, then one full-screen slide per person. Rotates every 10 s. |
 | `tv-grid.html` | **Team grid**: everyone as tiles. Click a person to open their profile. |
 | `tv-departments.html` | **Departments**: a leaderboard per department, ranked by today's count |
-| `admin.html` | **Admin** (sign-in required): enter daily counts, manage tasks, departments and employees |
+| `admin.html` | **Admin**: enter and approve daily counts, manage tasks, departments, employees, their logins and task lists, TV logins |
 
 ### How the numbers work
 - **Count**: what a person made on one task that day, in that task's unit (for example 12,500 *sheets* on RT1 Blank).
@@ -59,6 +62,33 @@ Every page works on a phone (from 360px wide) and a tablet. From 1024px up, the 
 
 ---
 
+## Logins, tasks and approvals
+- **Employee logins**: Admin ➜ Employees ➜ **Set login** gives a person a username and password (a strong one is suggested; it's shown once to pass on). They sign in on the app or the website and see only their own page. **Change** sets a new password or removes the login. Removing an employee removes their login too.
+- **Tasks**: Admin ➜ Employees ➜ **Tasks** picks the tasks each person usually does. They see these on their page; newly added tasks are sent to them as a notification.
+- **Sending counts**: on their page, an employee types how much they did on each task (today or up to 7 days back) and taps **Send**. While it waits they can change or withdraw it.
+- **Approving**: Admin ➜ Daily entry shows **counts waiting for approval** (with a badge on the tab and the bell). **Approve** as sent, change the number first, or **Reject** with an optional reason. Typing a sent count into the sheet also approves it. The employee is notified of the result. Approved counts are locked for them; the admin can still change or reject them (**Show decided**).
+- **TV screens** need a sign-in: Admin ➜ Employees ➜ **TV screen logins** ➜ **+ Add TV login**, then sign each TV in once with **Keep me signed in** ticked. The TV header's sign-out button signs it out.
+- Usernames sign in as `<username>@tiljay.local` behind the scenes (never emailed). The admin still signs in with their email.
+
+### Going live with logins (one time, in this order)
+1. **Edge Function `admin-users`** (creates logins): Supabase ➜ Edge Functions ➜ **Deploy a new function** ➜ *Via editor* ➜ name `admin-users`, paste `supabase/functions/admin-users/index.ts`, deploy (keep **Verify JWT** on).
+2. **Database**: run all of `supabase/schema.sql` in the SQL Editor. From this moment nothing can be read without signing in, so the TVs show the sign-in page until step 4.
+3. Publish the site (push to `main`).
+4. Sign in as the admin ➜ Employees ➜ add a **TV screen login** and sign each TV in with it. Then give employees logins and tasks.
+
+### Push notifications (Android app)
+1. Create a free Firebase project ➜ add an **Android app** with package name `lk.tiljay.cfpro` ➜ download `google-services.json` into `mobile/android/app/` (kept out of git).
+2. Firebase ➜ Project settings ➜ Service accounts ➜ **Generate new private key**.
+3. Supabase ➜ Edge Functions ➜ **Secrets**: `FIREBASE_SERVICE_ACCOUNT` = the whole key JSON; `PUSH_WEBHOOK_SECRET` = any long random text.
+4. Deploy the Edge Function `push` (`supabase/functions/push/index.ts`) with **Verify JWT turned off**.
+5. Supabase ➜ Database ➜ **Webhooks** ➜ new webhook on table `notifications`, event **Insert**, type *Supabase Edge Functions* ➜ `push`, with HTTP header `x-webhook-secret` = the same secret.
+6. Set `ANDROID_PUSH: true` in `assets/config.js`, publish, and build the app again.
+
+## Android app
+The app (`mobile/`) is the website in a Capacitor shell: it opens https://kpidashboard-one.vercel.app, so site updates reach it without a new app. It adds the app icon, push notifications and a "can't reach the server" page.
+- Build: `cd mobile && npm install && node build-apk.mjs` ➜ `mobile/dist/TiljayCFPro.apk` (needs Android Studio). Install it on phones (allow installing from this source), or publish it on Google Play.
+- Test build against a local copy of the data: `node build-apk.mjs --test` opens `http://localhost:8090` on a USB-connected phone after `adb reverse tcp:8090 tcp:8090`.
+
 ## Setup
 
 ### 1. Supabase database
@@ -96,4 +126,4 @@ The TVs check every minute whether anything changed, which is a tiny request, an
 - On a Fire TV Stick or Android TV, a "kiosk browser" app that opens a fixed URL at startup works well.
 
 ## Security note
-Every change is checked by the database itself: only signed-in users listed in `public.admins` can write, whatever the web page does. The dashboard data can be read by anyone who has the site URL, which is normal for a wall display. Don't put anything sensitive in it.
+Since the logins update, **nothing can be read without signing in**. TV accounts can read everything and change nothing; an employee can read only their own rows and can only send counts for their own tasks (never approve them); only admins change data. These rules are enforced by the database, not by the pages.

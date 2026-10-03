@@ -35,6 +35,12 @@
     close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
     trash: svg('<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>'),
     download: svg('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),
+    user: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
+    bell: svg('<path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>'),
+    check: svg('<path d="M20 6 9 17l-5-5"/>'),
+    x: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
+    key: svg('<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/>'),
+    tasks: svg('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/>'),
     more: svg('<circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/>'),
   };
 
@@ -84,26 +90,35 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ───────── Supabase ─────────
-  // Plain REST calls (no library): reads use the public key; admin changes use the signed-in admin's token.
+  // Plain REST calls (no library), always as the signed-in person: nothing can be read without signing in.
+  // The session is kept on this device (TVs and phones stay signed in) unless "Keep me signed in" is unticked.
   const SB_URL = String(CFG.SUPABASE_URL || "").replace(/\/+$/, "");
   const SB_SESSION = "kpi_sb_session";
-  let sbSession = null;
-  try { sbSession = JSON.parse(sessionStorage.getItem(SB_SESSION)); } catch (e) {}
-  function sbKeep(s) {
+  const readStored = () => {
+    try { return JSON.parse(localStorage.getItem(SB_SESSION)) || JSON.parse(sessionStorage.getItem(SB_SESSION)); } catch (e) { return null; }
+  };
+  let sbSession = readStored();
+  let sbRemember = true;
+  try { sbRemember = !sessionStorage.getItem(SB_SESSION); } catch (e) {}
+  function sbKeep(s, remember = sbRemember) {
+    sbRemember = remember;
     sbSession = s ? { access_token: s.access_token, refresh_token: s.refresh_token, expires_at: s.expires_at || Math.floor(Date.now() / 1000) + (s.expires_in || 3600), email: s.user?.email || s.email } : null;
-    try { if (sbSession) sessionStorage.setItem(SB_SESSION, JSON.stringify(sbSession)); else sessionStorage.removeItem(SB_SESSION); } catch (e) {}
+    try {
+      localStorage.removeItem(SB_SESSION); sessionStorage.removeItem(SB_SESSION);
+      if (sbSession) (remember ? localStorage : sessionStorage).setItem(SB_SESSION, JSON.stringify(sbSession));
+    } catch (e) {}
   }
+  const SIGNED_OUT = "Please sign in";
   function sbError(j, status) {
     const m = (j && (j.message || j.msg || j.error_description || j.error)) || `Request failed (${status})`;
-    if (j && (j.code === "42501" || /row-level security|permission denied|not an admin/i.test(m))) return "Not allowed: this account is not an admin";
-    if (j && (j.error_code === "invalid_credentials" || j.error === "invalid_grant" || /invalid login/i.test(m))) return "Wrong email or password";
-    if (j && j.error_code === "email_not_confirmed") return "This email is not confirmed yet — confirm it in Supabase ➜ Authentication ➜ Users";
-    if (/JWT|refresh token/i.test(m)) return "Your sign-in has expired — please sign in again";
+    if (j && (j.error_code === "invalid_credentials" || j.error === "invalid_grant" || /invalid login/i.test(m))) return "Wrong username or password";
+    if (/JWT|refresh token|sign in again/i.test(m)) return "Your sign-in has expired — please sign in again";
     if (j && (j.code === "PGRST202" || /could not find the function/i.test(m))) return DB_OUTDATED;
+    if (/permission denied|row-level security/i.test(m)) return "Not allowed with this login";
     return m;
   }
-  const DB_OUTDATED = "The database needs updating: run supabase/migrations/2026-09-29_jobs.sql and then supabase/schema.sql in the Supabase SQL Editor.";
-  async function sbFetch(path, body, { user = false } = {}) {
+  const DB_OUTDATED = "The database needs updating: run supabase/schema.sql in the Supabase SQL Editor (see README ➜ Logins and approvals).";
+  async function sbFetch(path, body, { user = true } = {}) {
     if (!SB_URL || !CFG.SUPABASE_KEY) throw new Error("Supabase is not set up: fill in SUPABASE_URL and SUPABASE_KEY in assets/config.js.");
     const headers = { apikey: CFG.SUPABASE_KEY, "Content-Type": "application/json" };
     if (user) headers.Authorization = "Bearer " + (await sbToken());
@@ -113,16 +128,32 @@
     if (!r.ok) throw new Error(sbError(j, r.status));
     return j;
   }
-  // The admin's access token, refreshed a minute before it expires.
+  // The signed-in person's access token, refreshed a minute before it expires (once, even if several calls ask).
+  let refreshing = null;
   async function sbToken() {
-    if (!sbSession) throw new Error("Please sign in again");
+    if (!sbSession) throw new Error(SIGNED_OUT);
+    const stored = readStored(); // another tab may have refreshed it already
+    if (stored && stored.refresh_token !== sbSession.refresh_token && stored.expires_at > sbSession.expires_at) sbSession = stored;
     if (Date.now() / 1000 > sbSession.expires_at - 60) {
-      try { sbKeep(await sbFetch("/auth/v1/token?grant_type=refresh_token", { refresh_token: sbSession.refresh_token })); }
-      catch (e) { sbKeep(null); throw new Error("Your sign-in has expired — please sign in again"); }
+      refreshing = refreshing || sbFetch("/auth/v1/token?grant_type=refresh_token", { refresh_token: sbSession.refresh_token }, { user: false })
+        .then((s) => sbKeep(s), (e) => { sbKeep(null); throw new Error("Your sign-in has expired — please sign in again"); })
+        .finally(() => { refreshing = null; });
+      await refreshing;
     }
     return sbSession.access_token;
   }
   const sbRpc = (fn, args, opts) => sbFetch("/rest/v1/rpc/" + fn, args, opts);
+  // "akila" ➜ akila@tiljay.local (keep the domain in sync with supabase/functions/admin-users)
+  const loginEmail = (login) => {
+    const s = String(login || "").trim().toLowerCase();
+    return s.includes("@") ? s : `${s}@${CFG.LOGIN_DOMAIN || "tiljay.local"}`;
+  };
+  // Signed out or not allowed: send this screen to the sign-in page, which brings them back afterwards
+  const isAuthProblem = (m) => /sign in|not allowed|can't open the team screens|isn't linked/i.test(m || "");
+  const goSignIn = () => {
+    const here = location.pathname.split("/").pop() || "index.html";
+    location.href = "index.html?next=" + encodeURIComponent(here + location.search);
+  };
 
   // ───────── status: count compared with the job's average that day ─────────
   // ratio 1 = exactly the average of everyone who did that job. THRESHOLDS are in % of that average.
@@ -159,23 +190,72 @@
     // Cheap "has anything changed?" check
     async version() { return sbRpc("data_version", {}); },
 
-    async auth(password, email) {
-      sbKeep(await sbFetch("/auth/v1/token?grant_type=password", { email, password }));
-      if (!(await sbRpc("is_admin", {}, { user: true }))) {
-        await KPI.logout();
-        throw new Error("Signed in, but this account is not an admin yet — see README ➜ Admin logins");
-      }
-      return true;
+    // Sign in with a username (or an email) and password; returns who it is: {admin, viewer, employee, username}
+    async auth(password, login, remember = true) {
+      sbKeep(await sbFetch("/auth/v1/token?grant_type=password", { email: loginEmail(login), password }, { user: false }), remember);
+      return KPI.whoami();
     },
-    // Is someone still signed in from earlier in this tab?
+    async whoami() { return sbRpc("whoami", {}); },
+    // Still signed in from before? ➜ whoami, else null
     async resume() {
-      if (!sbSession) return false;
-      try { return !!(await sbRpc("is_admin", {}, { user: true })); } catch (e) { sbKeep(null); return false; }
+      if (!sbSession) return null;
+      try { return await KPI.whoami(); } catch (e) { if (isAuthProblem(e.message)) sbKeep(null); return null; }
     },
-    signedInAs() { return sbSession?.email || ""; },
+    signedIn() { return !!sbSession; },
+    // "akila" for username logins, the email for others
+    signedInAs() {
+      const e = sbSession?.email || "", dom = "@" + (CFG.LOGIN_DOMAIN || "tiljay.local");
+      return e.endsWith(dom) ? e.slice(0, -dom.length) : e;
+    },
     async logout() {
-      if (sbSession) { try { await sbFetch("/auth/v1/logout", {}, { user: true }); } catch (e) {} }
+      await KPI.unregisterPush();
+      if (sbSession) { try { await sbFetch("/auth/v1/logout", {}); } catch (e) {} }
       sbKeep(null);
+    },
+    goSignIn, isAuthProblem,
+
+    // ───────── employees' app ─────────
+    // Their own page: tasks, counts, history (with each task's average for the colours), submissions
+    async me(days = 400) { return normaliseMe(await sbRpc("me", { days })); },
+    // Send / change / (qty null) withdraw a count for one of their tasks
+    async submitCount(date, job, qty) { return sbRpc("submit_count", { p_date: date, p_job: job, p_qty: qty }); },
+    async notifications(limit = 50) { return sbRpc("my_notifications", { p_limit: limit }); },
+    async readNotifications(ids = null) { await sbRpc("read_notifications", { p_ids: ids }); },
+    // { unread, pending (admins), latest } — cheap, for the badges
+    async inbox() { return sbRpc("inbox", {}); },
+
+    // ───────── admin ─────────
+    async adminData() { return sbRpc("admin_data", {}); },
+    // action: "approve" | "edit" (with qty) | "reject"
+    async reviewSubmission(id, action, qty = null, note = "") { await sbRpc("review_submission", { p_id: id, p_action: action, p_qty: qty, p_note: note }); },
+    async saveAssignments(employee, jobs) { await sbRpc("save_assignments", { p_employee: employee, p_jobs: jobs }); },
+    // Logins for employees and TV screens (Edge Function: supabase/functions/admin-users)
+    async adminUsers(body) { return sbFetch("/functions/v1/admin-users", body); },
+
+    // ───────── Android app: push notifications (does nothing in a browser) ─────────
+    async setupPush(onTap) {
+      const cap = window.Capacitor;
+      if (!CFG.ANDROID_PUSH || !cap?.isNativePlatform?.() || !cap.Plugins?.PushNotifications) return false;
+      const P = cap.Plugins.PushNotifications;
+      try {
+        let perm = await P.checkPermissions();
+        if (/^prompt/.test(perm.receive)) perm = await P.requestPermissions();
+        if (perm.receive !== "granted") return false;
+        try { await P.createChannel({ id: "updates", name: "Tasks and approvals", description: "New tasks, counts and approvals", importance: 5, visibility: 1, vibration: true }); } catch (e) {}
+        await P.removeAllListeners();
+        P.addListener("registration", async (t) => {
+          try { localStorage.setItem("kpi_push_token", t.value); } catch (e) {}
+          try { await sbRpc("register_device", { p_token: t.value, p_platform: "android" }); } catch (e) {}
+        });
+        P.addListener("pushNotificationReceived", () => window.dispatchEvent(new Event("kpi:notification")));
+        P.addListener("pushNotificationActionPerformed", (a) => onTap?.(a.notification?.data || {}));
+        await P.register();
+        return true;
+      } catch (e) { console.warn("push", e); return false; }
+    },
+    async unregisterPush() {
+      let t = null; try { t = localStorage.getItem("kpi_push_token"); } catch (e) {}
+      if (t && sbSession) { try { await sbRpc("unregister_device", { p_token: t }); } catch (e) {} }
     },
 
     // rows: [{employee, job, qty}] — qty null/'' deletes the cell
@@ -248,6 +328,16 @@
       const jd = KPI.jobDay(data, id, day);
       return { qty: q, ratio: jd.avg ? q / jd.avg : null, avg: jd.avg, n: jd.n };
     },
+    // Like empJobDay, but key may also be a whole department, "d:Sheets": all their tasks there that count in the
+    // department's unit, added up (ratio = the average of how they did on each). Used by the profile charts.
+    empKeyDay(data, name, key, day) {
+      if (key == null) return null;
+      if (typeof key !== "string" || !key.startsWith("d:")) return KPI.empJobDay(data, name, Number(key), day);
+      const dept = key.slice(2), unit = KPI.unit(data, dept);
+      const parts = data.jobs.filter((j) => j.department === dept && j.unit === unit).map((j) => KPI.empJobDay(data, name, j.id, day)).filter(Boolean);
+      if (!parts.length) return null;
+      return { qty: parts.reduce((a, x) => a + x.qty, 0), ratio: mean(parts.map((x) => x.ratio ?? 1)), avg: null, n: null };
+    },
     // A person's counts for one day: [{id, dept, label, qty, unit, avg, n, ratio}] in sheet order.
     // index = their counts compared with each job's average (1 = average), used for colour and ranking.
     empDay(data, name, day) {
@@ -260,7 +350,7 @@
     // Average count per working day over the last 7 working days (days with a count only)
     weekAvg(data, name, id, day) {
       if (id == null) return null;
-      return mean(KPI.workDays(day, 7).map((d) => KPI.empJobDay(data, name, id, d)?.qty).filter((v) => v != null));
+      return mean(KPI.workDays(day, 7).map((d) => KPI.empKeyDay(data, name, id, d)?.qty).filter((v) => v != null));
     },
     // Jobs a person has done lately, most frequent first (for their profile chart)
     recentJobs(data, name) { return data.jobsByEmp[name] || []; },
@@ -309,7 +399,7 @@
     },
     // A person's count on one job for the last n working days: [{day, v, st}]
     empJobSeries(data, name, id, day, n) {
-      return KPI.workDays(day, n).map((d) => { const x = id == null ? null : KPI.empJobDay(data, name, id, d); return { day: d, v: x?.qty ?? null, st: x ? status(x.ratio).key : null }; });
+      return KPI.workDays(day, n).map((d) => { const x = KPI.empKeyDay(data, name, id, d); return { day: d, v: x?.qty ?? null, st: x ? status(x.ratio).key : null }; });
     },
 
     // ───────── profile chart periods ─────────
@@ -331,7 +421,7 @@
     periodBars(data, name, id, day, per = period) {
       const sum = (from, to) => {
         let v = 0, days = 0;
-        for (let d = from; d <= to && d <= day; d = addDays(d, 1)) { const x = id == null ? null : KPI.empJobDay(data, name, id, d); if (x) { v += x.qty; days++; } }
+        for (let d = from; d <= to && d <= day; d = addDays(d, 1)) { const x = KPI.empKeyDay(data, name, id, d); if (x) { v += x.qty; days++; } }
         return { v: days ? v : null, days };
       };
       const D = parseDay(day);
@@ -466,14 +556,19 @@
     // Used by the slideshow and the team grid's profile view.
     personView(p, day, data) {
       const st = status(p.today.index); // colour = all their jobs today against each job's average
-      // Job the charts show: chosen chip, else today's main one (or the one they do most)
-      const choices = [...new Set([...p.today.parts.map((t) => t.id), ...KPI.recentJobs(data, p.name)])].slice(0, 4);
-      // (no main-department task yet: open on a task they did today)
-      const cj = data.jobById[chartJob[p.name]] ? chartJob[p.name] : p.mainJob ?? p.today.parts[0]?.id ?? KPI.recentJobs(data, p.name)[0] ?? null;
+      // What the charts follow: a whole department by default ("d:Sheets" = all their Sheets tasks counted in sheets,
+      // so every day they worked there shows), or one task picked with the chips.
+      const recent = KPI.recentJobs(data, p.name);
+      const rank = (d) => { const i = p.departments.indexOf(d); return i < 0 ? 99 : i; };
+      const deptKeys = [...new Set([...p.today.parts.map((t) => t.dept), ...recent.map((id) => data.jobById[id]?.department)].filter(Boolean))]
+        .sort((a, b) => rank(a) - rank(b)).map((d) => "d:" + d);
+      const valid = (k) => (typeof k === "string" ? deptKeys.includes(k) : !!data.jobById[k]);
+      const cj = valid(chartJob[p.name]) ? chartJob[p.name] : deptKeys.includes("d:" + p.mainDept) ? "d:" + p.mainDept : deptKeys[0] ?? p.mainJob ?? null;
+      const choices = [...deptKeys, ...[...new Set([...p.today.parts.map((t) => t.id), ...recent])].slice(0, 4)];
       if (cj != null && !choices.includes(cj)) choices.unshift(cj);
-      const job = data.jobById[cj];
-      const color = KPI.deptColor(job?.department), unit = job?.unit || "";
-      const jobName = job ? `${job.department} · ${KPI.jobLabel(job)}` : "no counts yet";
+      const isDept = typeof cj === "string", job = isDept ? null : data.jobById[cj], cdept = isDept ? cj.slice(2) : job?.department;
+      const color = KPI.deptColor(cdept), unit = isDept ? KPI.unit(data, cdept) : job?.unit || "";
+      const jobName = isDept ? `${cdept} · all tasks` : job ? `${job.department} · ${KPI.jobLabel(job)}` : "no counts yet";
       const todayRows = p.today.parts.length ? p.today.parts.map((t) => {
         const s = status(t.ratio);
         return `<div><div class="task-h"><span title="${esc(t.dept)}"><span class="dept-dot" style="background:${KPI.deptColor(t.dept)}"></span>${esc(t.label)}</span><span><b>${fmtFull(t.qty)}</b> <span class="of">${esc(t.unit)}</span>&nbsp; ${KPI.pill(t.ratio, t.n > 1 ? vsAvg(t.ratio) : "only one")}</span></div>
@@ -493,7 +588,7 @@
           <div class="c7-d">${esc(t.label)}</div></div>`;
       }).join("");
       const seg = Object.entries(KPI.PERIODS).map(([k, v]) => `<button type="button" data-period="${k}" class="${k === per ? "on" : ""}" aria-pressed="${k === per}">${v.label}</button>`).join("");
-      const chips = choices.length > 1 ? `<div class="pseg" role="group" aria-label="Task">${choices.map((id) => { const j = data.jobById[id]; return `<button type="button" data-pjob="${id}" data-person="${esc(p.name)}" class="${id === cj ? "on" : ""}" aria-pressed="${id === cj}" title="${esc(j.department)}"><span class="dept-dot" style="background:${KPI.deptColor(j.department)}"></span>${esc(KPI.jobLabel(j))}</button>`; }).join("")}</div>` : "";
+      const chips = choices.length > 1 ? `<div class="pseg" role="group" aria-label="Task">${choices.map((k) => { const d = typeof k === "string" ? k.slice(2) : data.jobById[k].department; const lbl = typeof k === "string" ? "All " + d : KPI.jobLabel(data.jobById[k]); return `<button type="button" data-pjob="${esc(k)}" data-person="${esc(p.name)}" class="${k === cj ? "on" : ""}" aria-pressed="${k === cj}" title="${esc(typeof k === "string" ? `All ${d} tasks counted in ${KPI.unit(data, d)}` : d)}"><span class="dept-dot" style="background:${KPI.deptColor(d)}"></span>${esc(lbl)}</button>`; }).join("")}</div>` : "";
       const best = Math.max(...trend.slice(-7).map((t) => t.v ?? -1));
       return `
         <div class="card ps-head" style="--dc:${KPI.deptColor(p.department)}">
@@ -508,6 +603,15 @@
         <div class="card panel"><div class="card-h"><h2 class="card-title">${KPI.PERIODS[per].title} <span class="card-sub">· ${KPI.PERIODS[per].sub}${unit ? " · " + esc(unit) : ""}</span></h2><div class="pbtns">${chips}<div class="pseg" role="group" aria-label="Chart period">${seg}</div></div></div>
           <div class="chart-area"><div class="cols7 n${bars.length}">${cols}</div></div>
           <div class="note">${esc(jobName)}${unit ? ` in ${esc(unit)}` : ""}${barAvg != null ? ` · average ${fmtFull(barAvg)} per ${per === "daily" ? "day" : per.replace(/ly$/, "")}` : ""}</div></div>`;
+    },
+
+    // Pages without the TV header (the employee page) use this to redraw when a chart button is pressed
+    useRenderer(fn) {
+      rerender = fn;
+      document.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-period]"); if (b) KPI.setPeriod(b.dataset.period);
+        const j = e.target.closest("[data-pjob]"); if (j) KPI.setChartJob(j.dataset.person, /^\d+$/.test(j.dataset.pjob) ? Number(j.dataset.pjob) : j.dataset.pjob);
+      });
     },
 
     // Query string for links between screens (keeps ?theme, ?kiosk, ?date …)
@@ -572,10 +676,15 @@
           <a class="icon-btn" href="index.html${qs}" data-nav="index.html" title="Home" aria-label="Home">${ICONS.home}</a>
           <button class="icon-btn theme-toggle" id="theme-btn" title="Switch light / dark theme" aria-label="Switch light or dark theme">${ICONS.moon}${ICONS.sun}</button>
           <button class="icon-btn" id="fs-btn" title="Full screen" aria-label="Full screen">${ICONS.expand}</button>
+          <button class="icon-btn" id="hdr-logout" title="Sign out of this screen" aria-label="Sign out">${ICONS.logout}</button>
         </div>`;
       const tick = () => { document.getElementById("hdr-clock").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); };
       tick(); setInterval(tick, 10000);
       document.getElementById("theme-btn").onclick = () => window.KPITheme.toggle();
+      document.getElementById("hdr-logout").onclick = async () => {
+        if (!confirm("Sign this screen out? Someone will need to sign in again to show the dashboard.")) return;
+        await KPI.logout(); goSignIn();
+      };
       document.getElementById("fs-btn").onclick = () => {
         if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.();
       };
@@ -586,7 +695,7 @@
       // Profile chart buttons (slideshow + team grid): period, and department for people in several
       document.addEventListener("click", (e) => {
         const b = e.target.closest("[data-period]"); if (b) KPI.setPeriod(b.dataset.period);
-        const j = e.target.closest("[data-pjob]"); if (j) KPI.setChartJob(j.dataset.person, Number(j.dataset.pjob));
+        const j = e.target.closest("[data-pjob]"); if (j) KPI.setChartJob(j.dataset.person, /^\d+$/.test(j.dataset.pjob) ? Number(j.dataset.pjob) : j.dataset.pjob);
       });
     },
     setHeaderDay(day) {
@@ -614,6 +723,7 @@
 
     // Runs render(data) now and every REFRESH_SECONDS; keeps last good data on network errors.
     autoRefresh(render) {
+      if (!sbSession) return goSignIn(); // the screens need a signed-in admin or TV account
       let last = null;
       rerender = () => { if (last) render(last); drawCal(); };
       const run = async () => {
@@ -627,6 +737,7 @@
           render(last); drawCal(); document.body.classList.remove("offline"); KPI.showProblem(null);
         }
         catch (e) {
+          if (isAuthProblem(e.message)) return goSignIn();
           console.error(e); document.body.classList.add("offline");
           if (last) render(last); else KPI.showProblem(e.message === "Failed to fetch" ? "Can't reach the database — check the network connection. Retrying every minute." : e.message);
         }
@@ -761,6 +872,17 @@
       jobById,
       empByName: Object.fromEntries(employees.map((x) => [x.name, x])),
     };
+  }
+
+  // me() ➜ the same shape, with each task's daily average (across everyone) filled in from job_days
+  function normaliseMe(d) {
+    const data = normalise(d);
+    (d.job_days || []).forEach(([day, job, n, total]) => { data.jobDayCache[day + "|" + job] = { total: Number(total), n, avg: n ? Number(total) / n : null }; });
+    data.assignments = (d.assignments || []).map(Number);
+    data.submissions = (d.submissions || []).map((x) => ({ ...x, qty: Number(x.qty), final_qty: x.final_qty == null ? null : Number(x.final_qty) }));
+    data.unread = d.unread || 0;
+    data.me = data.employees[0] || null;
+    return data;
   }
 
   window.KPI = KPI;

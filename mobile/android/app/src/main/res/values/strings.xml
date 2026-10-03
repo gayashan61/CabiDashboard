@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Tiljay CF Pro</string>
+    <string name="title_activity_main">Tiljay CF Pro</string>
+    <string name="package_name">lk.tiljay.cfpro</string>
+    <string name="custom_url_scheme">lk.tiljay.cfpro</string>
+</resources>

@@ -146,6 +146,7 @@ a { color: var(--accent-ink); }
   display: flex; align-items: center; gap: 1.5rem; padding: 0.9rem 2rem;
   background: var(--surface); border-bottom: 1px solid var(--border); flex: 0 0 auto; box-shadow: var(--shadow);
   position: relative; z-index: 10; /* above chart dots so the calendar popover covers them */
+  padding-top: calc(0.9rem + env(safe-area-inset-top, 0px));
 }
 .seg {
   display: inline-flex; padding: 0.25rem; gap: 0.2rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 0.7rem;
@@ -358,15 +359,35 @@ body.history .date-pick { background: var(--accent-soft); border-color: color-mi
 }
 .muted { color: var(--muted); }
 
+/* ---------- Sign in (start page) ---------- */
+.signin-wrap { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: calc(24px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px)); position: relative; font-size: 15px; }
+.signin-theme { position: absolute; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; }
+.signin { width: 100%; max-width: 400px; padding: 32px; box-shadow: var(--shadow-lg); }
+.signin .brand-mark { width: 72px; height: 72px; border-radius: 18px; padding: 4px; margin-bottom: 18px; }
+.signin h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
+.signin .hint { color: var(--muted); font-size: 14px; margin: 14px 0 0; }
+.signin label.f { display: block; font-size: 13px; font-weight: 600; margin: 18px 0 6px; color: var(--ink-2); }
+.signin input[type="text"], .signin input[type="password"] {
+  width: 100%; min-height: 46px; padding: 10px 12px; font: inherit; font-size: 16px; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--axis); border-radius: 10px;
+}
+.signin input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.signin .keep { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+.signin .keep input { width: 18px; height: 18px; accent-color: var(--accent); }
+.signin .err { color: var(--critical-ink); min-height: 1.4em; font-size: 14px; margin-top: 10px; }
+.signin .btn.primary { width: 100%; min-height: 48px; margin-top: 8px; font-size: 16px; }
+/* company name, led by three short pink bars like the ones in the logo */
+.company { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
+.company::before { content: ""; flex: 0 0 auto; width: 16px; height: 10px; background: repeating-linear-gradient(180deg, var(--brand-pink) 0 2px, transparent 2px 4px); }
+.who-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: -16px 0 20px; color: var(--muted); font-size: 14px; }
+.who-bar b { color: var(--ink); }
+
 /* ---------- Landing ---------- */
 .landing { max-width: 1040px; margin: 0 auto; padding: 56px 20px; font-size: 15px; }
 .landing-top { display: flex; align-items: center; gap: 20px; margin-bottom: 40px; }
 .landing-top .brand-mark { width: 84px; height: 84px; border-radius: 20px; padding: 5px; box-shadow: var(--shadow-lg); }
 .landing-id { flex: 1; min-width: 0; }
 .landing h1 { font-size: 32px; margin: 0; letter-spacing: -0.025em; line-height: 1.1; }
-/* company name, led by three short pink bars like the ones in the logo */
-.landing .company { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
-.landing .company::before { content: ""; flex: 0 0 auto; width: 16px; height: 10px; background: repeating-linear-gradient(180deg, var(--brand-pink) 0 2px, transparent 2px 4px); }
 .landing p.sub { color: var(--muted); margin: 8px 0 0; font-size: 15px; }
 .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
 .links a {
@@ -397,7 +418,7 @@ body.history .date-pick { background: var(--accent-soft); border-color: color-mi
   .tv-footer .legend-item { flex-basis: 100%; }
 
   /* header: brand + buttons, then the date on its own row; no clock / full screen */
-  .tv-header { flex-wrap: wrap; gap: 10px 12px; padding: 10px 16px; }
+  .tv-header { flex-wrap: wrap; gap: 10px 12px; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; }
   .hdr-spacer, .hdr-clock, #fs-btn { display: none; }
   .brand { flex: 1 1 0; min-width: 0; }
   .brand-mark { width: 40px; height: 40px; }
@@ -474,7 +495,7 @@ body.history .date-pick { background: var(--accent-soft); border-color: color-mi
   }
   .chip-row button.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
 
-  .landing { padding: 28px 16px 40px; }
+  .landing { padding: calc(28px + env(safe-area-inset-top, 0px)) 16px calc(40px + env(safe-area-inset-bottom, 0px)); }
   .landing-top { margin-bottom: 24px; }
   .landing h1 { font-size: 24px; }
   .landing-top { align-items: flex-start; gap: 14px; }

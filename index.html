@@ -15,20 +15,40 @@
 <script src="assets/theme.js"></script>
 </head>
 <body>
-<main class="landing">
+<!-- Everyone signs in here; employees go on to their own page, admins and TV accounts choose a screen. -->
+<div class="signin-wrap" id="signin" hidden>
+  <button class="icon-btn theme-toggle signin-theme" id="theme-btn-2" title="Switch light / dark theme" aria-label="Switch light or dark theme"></button>
+  <form class="card signin" id="sf" autocomplete="on">
+    <div class="brand-mark" id="logo-2"></div>
+    <h1 id="title-2">Tiljay CF Pro</h1><div class="company" id="company-2"></div>
+    <p class="hint" id="why">Sign in with the username and password from your admin.</p>
+    <label class="f" for="un">Username</label>
+    <input type="text" id="un" placeholder="e.g. akila" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+    <label class="f" for="pw">Password</label>
+    <input type="password" id="pw" placeholder="Your password" autocomplete="current-password" required>
+    <label class="keep"><input type="checkbox" id="keep" checked> Keep me signed in on this device</label>
+    <div class="err" id="err" role="alert"></div>
+    <button class="btn primary" type="submit" id="go">Sign in</button>
+  </form>
+</div>
+
+<main class="landing" id="chooser" hidden>
   <div class="landing-top">
     <div class="brand-mark" id="logo"></div>
-    <div class="landing-id"><h1 id="title">Tiljay CF Pro</h1><div class="company" id="company">Tiljay Computer Forms Production</div><p class="sub">Production performance for the factory floor. Choose a screen for the wall TV, or open the admin console.</p></div>
+    <div class="landing-id"><h1 id="title">Tiljay CF Pro</h1><div class="company" id="company"></div><p class="sub">Production performance for the factory floor. Choose a screen for the wall TV, or open the admin console.</p></div>
     <button class="icon-btn theme-toggle" id="theme-btn" title="Switch light / dark theme" aria-label="Switch light or dark theme"></button>
   </div>
+  <div class="who-bar"><span id="who"></span><button class="btn" id="out" type="button"></button></div>
   <div class="links">
     <a href="tv-slides.html"><div class="ico" data-i="play"></div><b>Slideshow</b><span>Team overview, then one slide per person. Rotates automatically.</span></a>
     <a href="tv-grid.html"><div class="ico" data-i="grid"></div><b>Team grid</b><span>Every team member on one screen as live tiles.</span></a>
     <a href="tv-departments.html"><div class="ico" data-i="list"></div><b>Departments</b><span>A ranked leaderboard for each department.</span></a>
-    <a href="admin.html"><div class="ico" data-i="edit"></div><b>Admin console</b><span>Enter daily counts, manage tasks, departments and employees.</span></a>
+    <a href="admin.html" id="to-admin"><div class="ico" data-i="edit"></div><b>Admin console</b><span>Enter daily counts, approve what people send, manage tasks, people and logins.</span></a>
+    <a href="me.html" id="to-me" hidden><div class="ico" data-i="user"></div><b>My page</b><span>Your tasks, your counts and your history.</span></a>
   </div>
   <div class="card tips">
     <b>TV tips</b><br>
+    Sign each TV in once with a TV account (Admin ➜ Employees ➜ TV screen logins) and tick “Keep me signed in” ·
     Press <b>F11</b> or the full-screen button for full screen ·
     Force a theme: <code>tv-grid.html?theme=light</code> or <code>?theme=dark</code> ·
     Hide the buttons and navigation: <code>&amp;kiosk=1</code> ·
@@ -37,13 +57,51 @@
 </main>
 <script src="assets/core.js"></script>
 <script>
-  document.getElementById("title").textContent = KPI_CONFIG.APP_NAME;
-  document.getElementById("company").textContent = KPI_CONFIG.COMPANY_NAME;
-  document.getElementById("logo").innerHTML = KPI.LOGO;
-  document.querySelectorAll("[data-i]").forEach((e) => (e.innerHTML = KPI.ICONS[e.dataset.i]));
-  const tb = document.getElementById("theme-btn");
-  tb.innerHTML = KPI.ICONS.moon + KPI.ICONS.sun;
-  tb.onclick = () => KPITheme.toggle();
+const $ = (id) => document.getElementById(id);
+const CFG = KPI_CONFIG;
+for (const id of ["title", "title-2"]) $(id).textContent = CFG.APP_NAME;
+for (const id of ["company", "company-2"]) $(id).textContent = CFG.COMPANY_NAME;
+for (const id of ["logo", "logo-2"]) $(id).innerHTML = KPI.LOGO;
+document.querySelectorAll("[data-i]").forEach((e) => (e.innerHTML = KPI.ICONS[e.dataset.i] || ""));
+for (const id of ["theme-btn", "theme-btn-2"]) { $(id).innerHTML = KPI.ICONS.moon + KPI.ICONS.sun; $(id).onclick = () => KPITheme.toggle(); }
+$("out").innerHTML = KPI.ICONS.logout + " Sign out";
+
+// After signing in, go back to the screen that sent them here (if this login may open it)
+const next = new URLSearchParams(location.search).get("next");
+const mayOpen = (w, page) => {
+  const p = String(page || "").split(/[?#]/)[0];
+  if (p === "admin.html") return w.admin;
+  if (p === "me.html") return !!w.employee;
+  if (/^tv-[a-z]+\.html$/.test(p)) return w.admin || w.viewer;
+  return false;
+};
+function showSignin(msg = "") {
+  $("chooser").hidden = true; $("signin").hidden = false;
+  $("err").textContent = msg;
+  if (next && !msg) $("why").textContent = "Sign in to open this screen.";
+  setTimeout(() => $("un").focus(), 0);
+}
+async function route(w) {
+  if (next && mayOpen(w, next)) return location.replace(next);
+  if (!w.admin && !w.viewer) {
+    if (w.employee) return location.replace("me.html");
+    await KPI.logout();
+    return showSignin("This login can't open anything yet — ask the admin to link it to an employee or a TV screen.");
+  }
+  $("signin").hidden = true; $("chooser").hidden = false;
+  $("who").innerHTML = `Signed in as <b>${KPI.esc(KPI.signedInAs())}</b>${w.admin ? " · admin" : " · TV screen"}`;
+  $("to-admin").hidden = !w.admin;
+  $("to-me").hidden = !w.employee;
+}
+$("sf").onsubmit = async (e) => {
+  e.preventDefault();
+  $("err").textContent = ""; $("go").disabled = true; $("go").textContent = "Signing in…";
+  try { route(await KPI.auth($("pw").value, $("un").value, $("keep").checked)); }
+  catch (ex) { $("err").textContent = ex.message === "Failed to fetch" ? "Can't reach the server — check the internet connection" : ex.message; }
+  $("go").disabled = false; $("go").textContent = "Sign in";
+};
+$("out").onclick = async () => { await KPI.logout(); showSignin(); };
+KPI.resume().then((w) => (w ? route(w) : showSignin()));
 </script>
 </body>
 </html>

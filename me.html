@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>My page · Tiljay CF Pro</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Tiljay CF Pro">
+<meta name="application-name" content="Tiljay CF Pro">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/config.js"></script>
+<script src="assets/theme.js"></script>
+<style>
+  html { font-size: 15px; }
+  body { font-size: 15px; }
+  .top { position: sticky; top: 0; z-index: 10; background: var(--surface); border-bottom: 1px solid var(--border); box-shadow: var(--shadow); padding-top: env(safe-area-inset-top); }
+  .top-in { max-width: 920px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+  .top .brand { flex: 1 1 0; min-width: 0; }
+  .top .brand-mark { width: 38px; height: 38px; border-radius: 10px; }
+  .top .brand-title { font-size: 17px; }
+  .top .brand-eyebrow { font-size: 11px; }
+  .top .icon-btn { width: 44px; height: 44px; position: relative; }
+  .badge { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--critical); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; box-shadow: 0 0 0 2px var(--surface); }
+  main { max-width: 920px; margin: 0 auto; padding: 16px 16px calc(32px + env(safe-area-inset-bottom)); }
+  .hello { display: flex; align-items: center; gap: 14px; margin: 4px 0 16px; }
+  .hello h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
+  .hello .ps-dept, .hello .sub { color: var(--muted); font-size: 14px; }
+  .tabs { display: flex; gap: 2px; padding: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 16px; }
+  .tabs button { flex: 1; min-height: 44px; background: none; border: 0; border-radius: 9px; font: inherit; font-weight: 500; color: var(--ink-2); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .tabs button.on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--shadow); }
+  .tabs .n { padding: 0 6px; border-radius: 999px; background: var(--critical); color: #fff; font-size: 11px; font-weight: 700; }
+  .days { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .days button { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--ink-2); font: inherit; font-weight: 600; cursor: pointer; }
+  .days button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+  .days input { min-height: 44px; padding: 0 10px; border: 1px solid var(--axis); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
+  .dept-h { margin: 18px 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; }
+  .task { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 14px 16px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px; }
+  .task-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .task-name { font-size: 17px; font-weight: 600; }
+  .task-name .m { color: var(--muted); font-weight: 500; margin-right: 6px; }
+  .task-name small { display: block; color: var(--muted); font-size: 13px; font-weight: 500; margin-top: 2px; }
+  .state { font-size: 13px; }
+  .state small { display: block; margin-top: 4px; color: var(--muted); text-align: right; }
+  .task-row { display: flex; gap: 8px; align-items: center; }
+  .task-row input { flex: 1; min-width: 0; min-height: 50px; padding: 0 14px; border: 1px solid var(--axis); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 20px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+  .task-row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .task-row input.bad { border-color: var(--critical); background: var(--critical-soft); }
+  .task-row .unit { color: var(--muted); font-weight: 600; min-width: 48px; }
+  .task-row .btn { min-height: 50px; padding: 0 18px; font-size: 15px; }
+  .task-done { display: flex; align-items: baseline; gap: 8px; }
+  .task-done b { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .task-done span { color: var(--muted); }
+  .linkbtn { background: none; border: 0; padding: 0; font: inherit; font-size: 14px; font-weight: 600; color: var(--accent-ink); cursor: pointer; min-height: 32px; }
+  .linkbtn.danger { color: var(--critical-ink); }
+  .empty-card { background: var(--surface); border: 1px dashed var(--axis); border-radius: 14px; padding: 24px; text-align: center; color: var(--muted); }
+  /* performance: the TV profile, laid out for this page */
+  .ps { grid-template-rows: auto auto; }
+  .ps .chart-fill { flex: none; height: 15rem; }
+  .ps .chart-area { flex: none; height: 17rem; }
+  .hist { margin-top: 18px; }
+  .hist h2 { font-size: 17px; margin: 0 0 8px; }
+  .hist-row { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--grid); font-size: 14px; }
+  .hist-row .d { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .hist-row .q { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .hist-row .q small { display: block; font-weight: 500; }
+  /* notifications */
+  .nt { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 3px; }
+  .nt.new { border-color: var(--accent); background: var(--accent-soft); }
+  .nt span { color: var(--ink-2); font-size: 14px; }
+  .nt small { color: var(--muted); font-size: 12px; }
+  .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translate(-50%, 8px); max-width: calc(100vw - 32px); background: var(--ink); color: var(--page); padding: 12px 18px; border-radius: 12px; font-weight: 600; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; z-index: 30; box-shadow: var(--shadow-lg); }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast.error { background: var(--critical); color: #fff; }
+  .err { color: var(--critical-ink); }
+  @media (max-width: 640px) {
+    .top .brand-eyebrow { display: none; }
+    .hello h1 { font-size: 21px; }
+    .hist-row { grid-template-columns: 70px minmax(0, 1fr) auto; }
+  }
+</style>
+</head>
+<body>
+<div class="top"><div class="top-in">
+  <div class="brand"><div class="brand-mark" id="logo"></div><div class="brand-text"><div class="brand-eyebrow" id="app"></div><div class="brand-title">My page</div></div></div>
+  <button class="icon-btn" id="bell" title="Notifications" aria-label="Notifications"><span id="bell-i"></span><span class="badge" id="bell-n" hidden></span></button>
+  <button class="icon-btn theme-toggle" id="theme-btn" title="Switch light / dark theme" aria-label="Switch light or dark theme"></button>
+  <button class="icon-btn" id="lo" title="Sign out" aria-label="Sign out"></button>
+</div></div>
+<main id="main"><p class="hint">Loading…</p></main>
+<div class="toast" id="toast" role="status"></div>
+<script src="assets/core.js"></script>
+<script>
+// An employee's own page: send counts for their tasks, see what the admin decided, and their history.
+const { esc, fmtFull } = KPI;
+const $ = (id) => document.getElementById(id);
+$("logo").innerHTML = KPI.LOGO;
+$("app").textContent = KPI_CONFIG.APP_NAME;
+$("bell-i").outerHTML = KPI.ICONS.bell;
+$("theme-btn").innerHTML = KPI.ICONS.moon + KPI.ICONS.sun;
+$("theme-btn").onclick = () => KPITheme.toggle();
+$("lo").innerHTML = KPI.ICONS.logout;
+$("lo").onclick = async () => { await KPI.logout(); location.replace("index.html"); };
+$("bell").onclick = () => { tab = "notes"; render(); };
+
+function toast(msg, error) {
+  const t = $("toast");
+  t.textContent = msg; t.className = "toast show" + (error ? " error" : "");
+  clearTimeout(t._h); t._h = setTimeout(() => (t.className = "toast"), Math.max(2600, msg.length * 60));
+}
+
+let data = null, me = null, tab = location.hash === "#notifications" ? "notes" : location.hash === "#performance" ? "perf" : "today";
+let day = KPI.todayKey();
+const minDay = () => KPI.addDays(KPI.todayKey(), -7);
+const dot = (d) => `<span class="dept-dot" style="background:${KPI.deptColor(d)}"></span>`;
+
+async function load() {
+  data = await KPI.me();
+  me = data.me;
+  paintBadge(data.unread);
+}
+function paintBadge(n) {
+  $("bell-n").hidden = !n; $("bell-n").textContent = n > 99 ? "99+" : n;
+  const t = document.querySelector('[data-t="notes"] .n'); if (t) { t.hidden = !n; t.textContent = n; }
+}
+
+function render() {
+  const m = $("main");
+  const tabs = `<nav class="tabs" aria-label="My page">
+    <button type="button" data-t="today" class="${tab === "today" ? "on" : ""}">${KPI.ICONS.tasks}My tasks</button>
+    <button type="button" data-t="perf" class="${tab === "perf" ? "on" : ""}">${KPI.ICONS.grid}Performance</button>
+    <button type="button" data-t="notes" class="${tab === "notes" ? "on" : ""}">${KPI.ICONS.bell}<span class="n" ${data.unread ? "" : "hidden"}>${data.unread}</span></button></nav>`;
+  m.innerHTML = `<div class="hello">${KPI.avatar(me, { size: "56px" })}<div><h1>${esc(me.name)}</h1><div class="ps-dept">${KPI.deptLabel(me)}</div></div></div>${tabs}<div id="pane"></div>`;
+  m.querySelectorAll(".tabs button").forEach((b) => (b.onclick = () => { tab = b.dataset.t; history.replaceState(null, "", { today: "#", perf: "#performance", notes: "#notifications" }[tab]); render(); }));
+  ({ today: paneToday, perf: panePerf, notes: paneNotes })[tab]();
+}
+
+// ───────── My tasks: send a count for each task done that day ─────────
+function paneToday() {
+  const p = $("pane");
+  const t = KPI.todayKey(), y = KPI.addDays(t, -1);
+  const subs = {};
+  data.submissions.forEach((s) => { subs[s.date + "|" + s.job] = s; });
+  const recorded = data.byKey[day + "|" + me.name] || {};
+  const jobs = data.assignments.map((id) => data.jobById[id]).filter(Boolean);
+  let html = `<div class="days">
+      <button type="button" data-day="${t}" class="${day === t ? "on" : ""}">Today</button>
+      <button type="button" data-day="${y}" class="${day === y ? "on" : ""}">Yesterday</button>
+      <input type="date" id="pick" value="${day}" min="${minDay()}" max="${t}" aria-label="Pick a day">
+    </div>`;
+  if (!jobs.length) {
+    html += `<div class="empty-card">No tasks are assigned to you yet.<br>Ask your admin to add your tasks.</div>`;
+  } else {
+    let lastD = null;
+    for (const j of jobs) {
+      if (j.department !== lastD) { lastD = j.department; html += `<h3 class="dept-h">${dot(j.department)}${esc(j.department)}</h3>`; }
+      const s = subs[day + "|" + j.id], r = recorded[j.id];
+      const label = `${j.machine ? `<span class="m">${esc(j.machine)}</span>` : ""}${esc(j.name)}<small>${esc(j.unit)}</small>`;
+      let state = "", body;
+      if (s && (s.status === "approved" || s.status === "edited")) {
+        state = s.status === "approved" ? KPI.pill(1, "Approved") : `${KPI.pill(0.9, "Changed by admin")}<small>you sent ${fmtFull(s.qty)}</small>`;
+        body = `<div class="task-done"><b>${fmtFull(s.final_qty)}</b><span>${esc(j.unit)}</span></div>${s.note ? `<p class="hint">“${esc(s.note)}”</p>` : ""}`;
+      } else if (!s && r != null) {
+        state = KPI.pill(1, "Recorded by admin");
+        body = `<div class="task-done"><b>${fmtFull(r)}</b><span>${esc(j.unit)}</span></div>`;
+      } else {
+        if (s?.status === "pending") state = `${KPI.pill(null, "Waiting for approval")}`;
+        if (s?.status === "rejected") state = `${KPI.pill(0, "Rejected")}${s.note ? `<small>“${esc(s.note)}”</small>` : ""}`;
+        body = `<div class="task-row"><input inputmode="decimal" enterkeyhint="send" autocomplete="off" data-job="${j.id}" value="${s ? s.qty : ""}" placeholder="0" aria-label="How many ${esc(j.unit)} — ${esc(KPI.jobLabel(j))}"><span class="unit">${esc(j.unit)}</span>
+          <button type="button" class="btn primary send" data-job="${j.id}">${s?.status === "pending" ? "Update" : s?.status === "rejected" ? "Send again" : "Send"}</button></div>
+          ${s?.status === "pending" ? `<button type="button" class="linkbtn danger withdraw" data-job="${j.id}">Withdraw</button>` : ""}`;
+      }
+      html += `<div class="task"><div class="task-top"><div class="task-name">${label}</div><div class="state">${state}</div></div>${body}</div>`;
+    }
+    html += `<p class="hint">After you send a count your admin approves it, and you're notified. Approved counts are locked — ask your admin if one is wrong.</p>`;
+  }
+  p.innerHTML = html;
+  p.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => { day = b.dataset.day; paneToday(); }));
+  $("pick").onchange = (e) => { if (e.target.value >= minDay() && e.target.value <= t) { day = e.target.value; paneToday(); } else toast("Pick today or one of the last 7 days", true); };
+  const send = async (job, qty, btn) => {
+    btn.disabled = true;
+    try {
+      await KPI.submitCount(day, job, qty);
+      await load(); paneToday();
+      toast(qty ? "Sent — waiting for your admin's approval" : "Withdrawn");
+    } catch (e) { btn.disabled = false; toast(e.message, true); if (KPI.isAuthProblem(e.message)) setTimeout(KPI.goSignIn, 1500); }
+  };
+  p.querySelectorAll(".send").forEach((b) => (b.onclick = () => {
+    const inp = p.querySelector(`input[data-job="${b.dataset.job}"]`);
+    const q = KPI.parseQty(inp.value);
+    inp.classList.toggle("bad", Number.isNaN(q) || !(q > 0));
+    if (Number.isNaN(q) || !(q > 0)) return toast("Type a number (more than 0)", true);
+    send(Number(b.dataset.job), q, b);
+  }));
+  p.querySelectorAll("input[data-job]").forEach((i) => i.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); p.querySelector(`.send[data-job="${i.dataset.job}"]`).click(); } }));
+  p.querySelectorAll(".withdraw").forEach((b) => (b.onclick = () => { if (confirm("Withdraw this count?")) send(Number(b.dataset.job), null, b); }));
+}
+
+// ───────── Performance: the same profile as on the TV, plus a list of recent counts ─────────
+function panePerf() {
+  const p = $("pane");
+  const d = KPI.liveDay(data);
+  const person = KPI.empSummary(data, me, d);
+  const subs = {};
+  data.submissions.forEach((s) => { subs[s.date + "|" + s.job] = s; });
+  const rows = [...data.entries].filter((e) => e.employee === me.name).sort((a, b) => b.date.localeCompare(a.date) || a.job - b.job).slice(0, 40);
+  p.innerHTML = `<section class="ps">${KPI.personView(person, d, data)}</section>
+    <section class="hist card panel"><h2>Recent counts</h2>${rows.length ? rows.map((e) => {
+      const j = data.jobById[e.job], s = subs[e.date + "|" + e.job];
+      const how = s?.status === "edited" ? `<small class="st-warning">changed (you sent ${fmtFull(s.qty)})</small>` : s ? `<small class="muted">approved</small>` : `<small class="muted">by admin</small>`;
+      return `<div class="hist-row"><span class="d">${esc(KPI.fmtDate(e.date))}</span><span>${dot(j.department)}${esc(KPI.jobLabel(j))}</span><span class="q">${fmtFull(e.qty)} ${esc(j.unit)}${how}</span></div>`;
+    }).join("") : '<p class="hint">No counts yet.</p>'}</section>`;
+}
+
+// ───────── Notifications ─────────
+async function paneNotes() {
+  const p = $("pane");
+  p.innerHTML = `<p class="hint">Loading…</p>`;
+  try {
+    const list = await KPI.notifications(50);
+    p.innerHTML = list.length ? list.map((n) => `<div class="nt ${n.read ? "" : "new"}"><b>${esc(n.title)}</b><span>${esc(n.body)}</span><small>${esc(new Date(n.created_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }))}</small></div>`).join("")
+      : `<div class="empty-card">No notifications yet.</div>`;
+    if (list.some((n) => !n.read)) { await KPI.readNotifications(); data.unread = 0; paintBadge(0); }
+  } catch (e) { p.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+
+// Charts' Daily/Weekly/… and task buttons redraw the performance pane
+KPI.useRenderer(() => { if (tab === "perf") panePerf(); });
+
+// New notifications: badge (and fresh data when not typing) — every 60 s, when a push arrives, and when the app comes back
+let latest = null;
+async function check() {
+  try {
+    const i = await KPI.inbox();
+    paintBadge(i.unread);
+    if (latest !== null && i.latest !== latest) {
+      const typing = document.activeElement?.matches?.("input[data-job]");
+      await load();
+      if (!typing) render();
+    }
+    latest = i.latest;
+  } catch (e) { if (KPI.isAuthProblem(e.message)) KPI.goSignIn(); }
+}
+
+(async () => {
+  const w = await KPI.resume();
+  if (!w) return KPI.goSignIn();
+  if (!w.employee) return location.replace("index.html");
+  try { await load(); }
+  catch (e) { $("main").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+  render();
+  check();
+  setInterval(check, 60000);
+  window.addEventListener("kpi:notification", check);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) check(); });
+  // tapping a notification about a count or a new task opens My tasks (on that count's day)
+  KPI.setupPush((d) => { tab = d.kind === "review" || d.kind === "assignment" ? "today" : "notes"; if (d.date >= minDay()) day = d.date; check().then(render); });
+})();
+</script>
+</body>
+</html>

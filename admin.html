@@ -17,7 +17,7 @@
 <style>
   html { font-size: 15px; }
   body { font-size: 14px; }
-  .appbar { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--border); box-shadow: var(--shadow); }
+  .appbar { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--border); box-shadow: var(--shadow); padding-top: env(safe-area-inset-top, 0px); }
   .appbar-in { max-width: 1240px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 14px; }
   .appbar .brand-mark { width: 36px; height: 36px; border-radius: 10px; }
   .appbar .brand-mark svg { width: 20px; height: 20px; }
@@ -120,17 +120,76 @@
   .linkbtn { background: none; border: 0; padding: 0; font: inherit; font-size: 12px; font-weight: 600; color: var(--accent-ink); cursor: pointer; text-align: left; }
   .linkbtn:hover { text-decoration: underline; }
   .linkbtn.danger { color: var(--critical-ink); }
-  .login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 20px; position: relative; }
-  .login-wrap .theme-toggle { position: absolute; top: 16px; right: 16px; }
-  .login { width: 100%; max-width: 380px; padding: 32px; box-shadow: var(--shadow-lg); }
-  .login .brand-mark { width: 72px; height: 72px; border-radius: 18px; padding: 4px; margin-bottom: 18px; }
-  .login h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
-  .login .company { display: flex; align-items: center; gap: 8px; margin: 6px 0 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-2); }
-  .login .company::before { content: ""; flex: 0 0 auto; width: 14px; height: 10px; background: repeating-linear-gradient(180deg, var(--brand-pink) 0 2px, transparent 2px 4px); }
-  .login p.hint { margin: 0; }
-  .login label { display: block; font-size: 13px; font-weight: 600; margin: 20px 0 6px; color: var(--ink-2); }
-  .login input { width: 100%; padding: 11px 12px; }
-  .login button { width: 100%; padding: 11px; margin-top: 8px; }
+  /* bell + badges */
+  .bellwrap { position: relative; }
+  .bellwrap .icon-btn { position: relative; }
+  .badge { position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--critical); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; box-shadow: 0 0 0 2px var(--surface); }
+  .tbadge { margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--critical); color: #fff; font-size: 11px; font-weight: 700; }
+  .bell-pop { width: min(360px, calc(100vw - 32px)); max-height: 70vh; overflow-y: auto; }
+  .bell-pop[hidden] { display: none; }
+  .bell-pop .nt { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 0; padding: 10px 12px; border-bottom: 1px solid var(--grid); border-radius: 0; text-align: left; }
+  .bell-pop .nt:last-child { border-bottom: 0; }
+  .bell-pop .nt span { color: var(--ink-2); font-weight: 400; font-size: 13px; }
+  .bell-pop .nt small { color: var(--muted); font-size: 12px; }
+  .bell-pop .nt.new { background: var(--accent-soft); }
+  /* approvals */
+  .appr { background: var(--surface); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; box-shadow: var(--shadow); }
+  .ap-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .ap-h h2 { margin: 0; font-size: 16px; }
+  .ap-h .sp { flex: 1; }
+  .ap-list { display: flex; flex-direction: column; }
+  .ap-list.decided { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--axis); }
+  .ap-row { display: grid; grid-template-columns: 38px minmax(150px, 1.2fr) minmax(140px, 1fr) auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--grid); }
+  .ap-row:last-child { border-bottom: 0; }
+  .ap-row.approved, .ap-row.edited, .ap-row.rejected { opacity: .85; }
+  .ap-who { min-width: 0; display: flex; flex-direction: column; }
+  .ap-who span { color: var(--muted); font-size: 13px; display: flex; align-items: center; }
+  .ap-sent { font-size: 14px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .ap-sent b { color: var(--ink); font-size: 16px; }
+  .ap-sent small { flex-basis: 100%; color: var(--muted); }
+  .ap-act { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .ap-act .ap-q { width: 110px; text-align: right; font-weight: 600; }
+  .ap-act .ap-note { width: 170px; }
+  .ap-act .btn svg { width: 15px; height: 15px; }
+  .eg td.cell input.pend::placeholder, .ec-r input.pend::placeholder { color: var(--accent-ink); font-style: italic; font-weight: 600; opacity: 1; }
+  .eg td.cell:has(input.pend) { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); }
+  .ec-r input.pend { border-color: var(--accent); border-style: dashed; }
+  /* dialogs (logins, tasks) */
+  dialog.dlg { border: 0; padding: 0; border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-lg); width: min(460px, calc(100vw - 24px)); max-height: calc(100vh - 32px); }
+  dialog.dlg:has(.wide) { width: min(720px, calc(100vw - 24px)); }
+  dialog.dlg::backdrop { background: rgba(0, 0, 0, .5); }
+  .dlg-in { padding: 20px 22px; display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 32px); }
+  .dlg-in h2 { margin: 0; font-size: 18px; }
+  .dlg-in .hint { margin: 0; }
+  .fl { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+  .fl small { font-weight: 400; color: var(--muted); }
+  .pwrow { display: flex; gap: 6px; }
+  .pwrow input { flex: 1; font-family: ui-monospace, Consolas, monospace; letter-spacing: .03em; }
+  .dlg-btns { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+  .dlg-btns .sp { flex: 1; }
+  .creds { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .creds div { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+  .creds b { font-size: 18px; color: var(--ink); font-family: ui-monospace, Consolas, monospace; user-select: all; word-break: break-all; }
+  .t-q { width: 100%; }
+  .tk-list { overflow-y: auto; min-height: 120px; max-height: 50vh; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; align-content: start; }
+  .tk-list fieldset { border: 1px solid var(--border); border-radius: 10px; padding: 6px 10px 8px; margin: 0; min-width: 0; }
+  .tk-list fieldset[hidden], .tk[hidden] { display: none; }
+  .tk-list legend { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; padding: 0 4px; display: flex; align-items: center; }
+  .tk { display: flex; align-items: center; gap: 8px; min-height: 36px; font-size: 14px; cursor: pointer; }
+  .tk input { width: 18px; height: 18px; accent-color: var(--accent); flex: 0 0 auto; }
+  .tk span { flex: 1; min-width: 0; }
+  .tk small { color: var(--muted); }
+  /* logins in the employees / TV tables */
+  .login-u { display: inline-flex; align-items: center; gap: 5px; margin-right: 8px; font-family: ui-monospace, Consolas, monospace; }
+  .login-u svg { width: 14px; height: 14px; color: var(--accent-ink); }
+  .lg-cell { white-space: nowrap; }
+  .lg-cell .linkbtn { margin-left: 8px; }
+  .tasks-btn { box-shadow: none; padding: 6px 10px; font-size: 13px; }
+  .tasks-btn svg { width: 15px; height: 15px; color: var(--accent-ink); }
+  .del-emp { width: 34px; height: 34px; box-shadow: none; color: var(--critical-ink); }
+  .del-emp svg { width: 15px; height: 15px; }
+  .tv-logins { margin-top: 36px; }
+  .tv-logins h2 { font-size: 18px; margin: 0 0 6px; }
   .err { color: var(--critical-ink); min-height: 1.4em; font-size: 13px; margin-top: 8px; }
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 8px); background: var(--ink); color: var(--page); padding: 11px 18px; border-radius: 10px; font-weight: 600; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; z-index: 9; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 8px; }
   .toast::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
@@ -236,16 +295,27 @@
     table.dept-table td:nth-child(1) { grid-row: 4; }
     .dname input { max-width: none; }
     /* Employees: photo + TV switch, then name, main department, other departments */
-    table.emp-table td:nth-child(2), table.emp-table td:nth-child(3), table.emp-table td:nth-child(4) { grid-column: 1 / -1; }
-    table.emp-table td:nth-child(5) { grid-column: 2; grid-row: 1; align-self: center; }
-    table.emp-table td:nth-child(5) label { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+    /* photo | TV switch + remove, then name, departments, login, tasks */
+    table.emp-table tr { grid-template-columns: minmax(0, 1fr) auto auto; }
+    table.emp-table td:nth-child(n+2):nth-child(-n+6) { grid-column: 1 / -1; }
+    table.emp-table td:nth-child(7) { grid-column: 2; grid-row: 1; align-self: center; }
+    table.emp-table td:nth-child(8) { grid-column: 3; grid-row: 1; align-self: center; }
+    table.emp-table td:nth-child(7) label { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+    .del-emp { width: 44px; height: 44px; }
+    .tasks-btn { min-height: 44px; }
+    table.tv-table tr { grid-template-columns: minmax(0, 1fr) auto; }
+    table.tv-table td:nth-child(3) { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+    .ap-row { grid-template-columns: 38px minmax(0, 1fr); }
+    .ap-sent, .ap-act { grid-column: 1 / -1; justify-content: flex-start; }
+    .ap-act .ap-q { flex: 1; min-width: 90px; }
+    .ap-act .ap-note { flex: 2; min-width: 120px; width: auto; }
+    .creds { grid-template-columns: 1fr; }
     table.emp-table .ac { width: 22px !important; height: 22px; min-height: 0; }
     .ph-act { gap: 8px; }
     .linkbtn { font-size: 14px; min-height: 28px; }
     .also-chips .chip { font-size: 13px; padding: 8px 12px; }
     .dept-add { flex-direction: column; align-items: stretch; }
     .dept-add input { width: 100% !important; }
-    .login { padding: 24px; }
   }
 </style>
 </head>
@@ -283,38 +353,75 @@ window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault()
 const themeBtn = () => `<button class="icon-btn theme-toggle" id="theme-btn" title="Switch light / dark theme" aria-label="Switch light or dark theme">${KPI.ICONS.moon}${KPI.ICONS.sun}</button>`;
 const bindTheme = () => { const b = document.getElementById("theme-btn"); if (b) b.onclick = () => KPITheme.toggle(); };
 
-// ───────── login ─────────
-function showLogin(err = "") {
-  app.innerHTML = `<div class="login-wrap">${themeBtn()}<form class="card login" id="lf">
-    <div class="brand-mark">${KPI.LOGO}</div>
-    <h1>${esc(CFG.APP_NAME)}</h1><div class="company">${esc(CFG.COMPANY_NAME)}</div>
-    <p class="hint">Sign in to the admin console.</p>
-    <label for="em">Email</label>
-    <input type="email" id="em" placeholder="you@company.com" autocomplete="username" autofocus>
-    <label for="pw">Password</label>
-    <input type="password" id="pw" placeholder="Enter your password" autocomplete="current-password">
-    <div class="err" id="err">${esc(err)}</div>
-    <button class="btn primary" type="submit">Sign in</button></form></div>`;
-  bindTheme();
-  document.getElementById("lf").onsubmit = async (e) => {
-    e.preventDefault();
-    document.getElementById("err").textContent = "Checking…";
-    try { await KPI.auth(document.getElementById("pw").value, document.getElementById("em").value.trim()); await boot(); }
-    catch (ex) { document.getElementById("err").textContent = ex.message; }
-  };
-}
-function logout(msg = "") { KPI.logout(); showLogin(msg); }
-// A save failed because the sign-in is no longer valid
-const authLost = (m) => /sign in|not an admin/i.test(m);
-const failed = (e) => { toast("Save failed: " + e.message, true); if (authLost(e.message)) logout(e.message); };
+// ───────── sign-in ─────────
+// Signing in happens on the start page (index.html); this page is for admins only.
+function logout() { KPI.logout().then(() => location.replace("index.html")); }
+const failed = (e) => { toast("Save failed: " + e.message, true); if (KPI.isAuthProblem(e.message)) setTimeout(KPI.goSignIn, 1500); };
 
-async function boot() {
-  app.innerHTML = `<div class="wrap"><p class="hint">Loading…</p></div>`;
-  try { data = await KPI.load(120); }
-  catch (e) { app.innerHTML = `<div class="wrap"><p class="err">Could not load data: ${esc(e.message)}</p><p class="hint">Check SUPABASE_URL / SUPABASE_KEY in assets/config.js and that supabase/schema.sql has been run.</p></div>`; return; }
-  shell();
+// Admin-only data next to `data`: logins, TV accounts, task lists and submissions (admin_data())
+let admin = { logins: {}, viewers: [], assignments: [], submissions: [] };
+const tasksOf = (name) => admin.assignments.filter(([e]) => e === name).map(([, j]) => Number(j));
+async function reloadData() {
+  const [d, a] = await Promise.all([KPI.load(120), KPI.adminData()]);
+  data = d;
+  admin = { ...a, submissions: (a.submissions || []).map((s) => ({ ...s, qty: Number(s.qty), final_qty: s.final_qty == null ? null : Number(s.final_qty) })) };
 }
-async function reloadData() { data = await KPI.load(120); }
+async function boot() {
+  const w = await KPI.resume();
+  if (!w) return KPI.goSignIn();
+  if (!w.admin) return location.replace(w.employee ? "me.html" : "index.html");
+  app.innerHTML = `<div class="wrap"><p class="hint">Loading…</p></div>`;
+  try { await reloadData(); }
+  catch (e) { app.innerHTML = `<div class="wrap"><p class="err">Could not load data: ${esc(e.message)}</p><p class="hint">Check that supabase/schema.sql has been run (README ➜ Logins and approvals).</p></div>`; return; }
+  shell();
+  startInbox();
+  // On the Android app: push notifications; tapping one about a count opens the approvals
+  KPI.setupPush((d) => { if (d.kind === "submission") { tab = "entry"; renderTab(); document.getElementById("appr")?.scrollIntoView(); } });
+}
+
+// ───────── notifications and the pending badge ─────────
+// Checks every 30 s (and when a push arrives): new submissions refresh the approvals list without touching typed values.
+let lastInbox = null;
+function paintBadges(i) {
+  const b = document.getElementById("bell-n"), p = document.getElementById("pend-n");
+  if (b) { b.hidden = !i.unread; b.textContent = i.unread > 99 ? "99+" : i.unread; }
+  if (p) { p.hidden = !i.pending; p.textContent = i.pending; }
+}
+function startInbox() {
+  const tick = async () => {
+    try {
+      const i = await KPI.inbox();
+      paintBadges(i);
+      if (lastInbox && (i.pending !== lastInbox.pending || i.latest !== lastInbox.latest)) {
+        const a = await KPI.adminData();
+        admin = { ...a, submissions: (a.submissions || []).map((s) => ({ ...s, qty: Number(s.qty), final_qty: s.final_qty == null ? null : Number(s.final_qty) })) };
+        if (tab === "entry") renderApprovals();
+      }
+      lastInbox = i;
+    } catch (e) { if (KPI.isAuthProblem(e.message)) KPI.goSignIn(); }
+  };
+  tick();
+  setInterval(tick, 30000);
+  window.addEventListener("kpi:notification", tick);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
+}
+const ago = (t) => {
+  const m = Math.round((Date.now() - new Date(t)) / 60000);
+  return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : KPI.fmtDate(KPI.dayKey(new Date(t)));
+};
+async function openBell() {
+  const pop = document.getElementById("bell-pop");
+  if (!pop.hidden) { pop.hidden = true; return; }
+  pop.hidden = false;
+  pop.innerHTML = `<div class="who">Loading…</div>`;
+  try {
+    const list = await KPI.notifications(30);
+    pop.innerHTML = list.length ? list.map((n) => `<button type="button" class="nt ${n.read ? "" : "new"}" data-kind="${esc(n.kind)}">
+        <b>${esc(n.title)}</b><span>${esc(n.body)}</span><small>${esc(ago(n.created_at))}</small></button>`).join("")
+      : `<div class="who">No notifications yet</div>`;
+    if (list.some((n) => !n.read)) { await KPI.readNotifications(); paintBadges({ ...(lastInbox || {}), unread: 0 }); }
+  } catch (e) { pop.innerHTML = `<div class="who">${esc(e.message)}</div>`; }
+}
 
 function shell() {
   app.innerHTML = `
@@ -332,21 +439,26 @@ function shell() {
           ${KPI.signedInAs() ? `<div class="who">Signed in as<br><b>${esc(KPI.signedInAs())}</b></div>` : ""}
           <a href="tv-slides.html">${KPI.ICONS.play}Slideshow</a><a href="tv-grid.html">${KPI.ICONS.grid}Team grid</a><a href="tv-departments.html">${KPI.ICONS.list}Departments</a>
         </div></details>
+      <div class="bellwrap"><button class="icon-btn" id="bell" title="Notifications" aria-label="Notifications">${KPI.ICONS.bell}<span class="badge" id="bell-n" hidden></span></button>
+        <div class="menu-pop bell-pop" id="bell-pop" hidden></div></div>
       ${themeBtn()}
       <button class="icon-btn" id="lo" title="Log out" aria-label="Log out">${KPI.ICONS.logout}</button>
     </div></div>
     <div class="wrap" id="wrap">
-    <div class="page-h"><div><h1>Production data</h1><p>Record each person's daily counts per task, and manage departments, tasks and the team.</p></div></div>
+    <div class="page-h"><div><h1>Production data</h1><p>Record and approve each person's daily counts, and manage tasks, departments, people and logins.</p></div></div>
     <nav class="tabs">
-      <button data-t="entry">Daily entry</button><button data-t="jobs">Tasks</button><button data-t="departments">Departments</button><button data-t="employees">Employees</button>
+      <button data-t="entry">Daily entry<span class="tbadge" id="pend-n" title="Counts waiting for approval" hidden></span></button><button data-t="jobs">Tasks</button><button data-t="departments">Departments</button><button data-t="employees">Employees</button>
     </nav>
     <div id="view"></div></div>`;
   document.getElementById("lo").onclick = () => logout();
+  document.getElementById("bell").onclick = (e) => { e.stopPropagation(); openBell(); };
+  document.addEventListener("click", (e) => { const pop = document.getElementById("bell-pop"); if (pop && !pop.hidden && !e.target.closest(".bellwrap")) pop.hidden = true; });
   bindTheme();
   app.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
     if (dirty && !confirm("You have unsaved changes. Leave this tab?")) return;
     dirty = false; entryEdits = {}; tab = b.dataset.t; renderTab();
   });
+  if (lastInbox) paintBadges(lastInbox);
   renderTab();
 }
 function renderTab() {
@@ -366,6 +478,10 @@ function viewEntry() {
   const depts = deptNames();
   const key = (id, name) => id + "|" + name;
   const saved = {};
+  // Counts employees sent for this day that wait for approval: shown as hints in their boxes
+  const pend = {};
+  admin.submissions.forEach((x) => { if (x.status === "pending" && x.date === entryDay) pend[key(x.job, x.employee)] = x; });
+  const pendAttrs = (k) => pend[k] ? ` class="pend" placeholder="${KPI.fmtFull(pend[k].qty)}" title="${esc(pend[k].employee)} sent ${KPI.fmtFull(pend[k].qty)} — waiting for approval (type it to approve)"` : "";
   data.entries.forEach((e) => { if (e.date === entryDay) saved[key(e.job, e.employee)] = e.qty; });
   const text = (k) => (k in entryEdits ? entryEdits[k] : String(saved[k] ?? ""));
   const used = (id) => Object.keys(saved).some((k) => k.startsWith(id + "|")) || Object.keys(entryEdits).some((k) => k.startsWith(id + "|"));
@@ -388,7 +504,7 @@ function viewEntry() {
       rows += `<tr class="g"><th colspan="${cols}"><span>${dot(j.department)}${esc(j.department || "No department")}</span></th></tr>`;
     }
     rows += `<tr data-job="${j.id}" data-unit="${esc(j.unit)}"><th class="c-job" title="${esc(j.department + " · " + KPI.jobLabel(j))}">${j.machine ? `<span class="m">${esc(j.machine)}</span>` : ""}${esc(j.name)}${j.active ? "" : ' <span class="m">(removed)</span>'}</th><td class="c-unit">${esc(j.unit)}</td>
-      ${people.map((e, c) => `<td class="cell${e.departments.includes(j.department) ? "" : " off"}"><input inputmode="decimal" data-c="${c}" data-emp="${esc(e.name)}" value="${esc(text(key(j.id, e.name)))}" aria-label="${esc(e.name)} — ${esc(KPI.jobLabel(j))}"></td>`).join("")}
+      ${people.map((e, c) => `<td class="cell${e.departments.includes(j.department) ? "" : " off"}"><input inputmode="decimal" data-c="${c}" data-emp="${esc(e.name)}" value="${esc(text(key(j.id, e.name)))}"${pendAttrs(key(j.id, e.name))} aria-label="${esc(e.name)} — ${esc(KPI.jobLabel(j))}"></td>`).join("")}
       <td class="c-tot"></td></tr>`;
   });
   // Phones / tablets: one card per task; inside, the department's own people first, then (on request) everyone else
@@ -396,7 +512,7 @@ function viewEntry() {
   if (narrow) {
     const everyone = data.employees.filter((e) => e.active || jobs.some((j) => text(key(j.id, e.name)) !== ""));
     const row = (e, j) => `<label class="ec-r">${KPI.avatar(e, { cls: "sm" })}<span class="ec-nm">${esc(e.name)}${e.departments.includes(j.department) ? "" : `<small>${esc(e.departments.join(", ") || "No department")}</small>`}</span>
-      <input inputmode="decimal" enterkeyhint="next" autocomplete="off" data-emp="${esc(e.name)}" value="${esc(text(key(j.id, e.name)))}" placeholder="${esc(j.unit)}" aria-label="${esc(e.name)} — ${esc(KPI.jobLabel(j))}"></label>`;
+      <input inputmode="decimal" enterkeyhint="next" autocomplete="off" data-emp="${esc(e.name)}" value="${esc(text(key(j.id, e.name)))}"${pendAttrs(key(j.id, e.name)) || ` placeholder="${esc(j.unit)}"`} aria-label="${esc(e.name)} — ${esc(KPI.jobLabel(j))}"></label>`;
     let lastD = null;
     jobs.forEach((j) => {
       if (!deptFilter && j.department !== lastD) { lastD = j.department; cards += `<h3 class="ec-dept">${dot(j.department)}${esc(j.department || "No department")}</h3>`; }
@@ -434,6 +550,7 @@ function viewEntry() {
       <span class="sp"></span>
       ${deptFilter ? `<label class="hint"><input type="checkbox" id="members" ${onlyMembers ? "checked" : ""}> Only people in ${esc(deptFilter)}</label>` : ""}
     </div>
+    <section class="appr" id="appr" hidden></section>
     <p class="hint hint-d">Type each person's count in the row of the task they did, like the Excel sheet. Sums like <b>1500+250</b> work; leave blank for none.
       <b>Enter</b> / arrow keys move between boxes, <b>Ctrl+S</b> saves. Shaded boxes = the person isn't in that department (you can still fill them).<br>
       <b>From Excel:</b> copy the day's sheet from the <i>Dept</i> / names row down, click any box and paste — every count lands in the right place.</p>
@@ -454,6 +571,7 @@ function viewEntry() {
   document.getElementById("today").onclick = () => setDay(KPI.todayKey());
   v.querySelector(".dtabs").onclick = (e) => { const b = e.target.closest("[data-d]"); if (b) { deptFilter = b.dataset.d; viewEntry(); } };
   if (narrow) v.querySelector(".dtabs .on")?.scrollIntoView({ block: "nearest", inline: "center" }); // the chosen chip stays in view
+  renderApprovals();
   const mem = document.getElementById("members");
   if (mem) mem.onchange = () => { onlyMembers = mem.checked; viewEntry(); };
 
@@ -754,6 +872,70 @@ async function dayWorkbook(day, jobs, people, val) {
   return new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 }
 
+// ───────── approvals ─────────
+// Counts employees sent from the app: approve as sent, change the number first, or reject (with an optional reason).
+// Decided ones from the last 30 days can be opened and changed again.
+let showDecided = false;
+function renderApprovals() {
+  const el = document.getElementById("appr");
+  if (!el) return;
+  const subs = admin.submissions || [];
+  const pending = subs.filter((x) => x.status === "pending"), decided = subs.filter((x) => x.status !== "pending");
+  el.hidden = !pending.length && !decided.length;
+  if (el.hidden) return;
+  const chip = (x) => ({
+    approved: '<span class="pill pill-good">Approved</span>',
+    edited: `<span class="pill pill-warning">Changed to ${KPI.fmtFull(x.final_qty)}</span>`,
+    rejected: '<span class="pill pill-critical">Rejected</span>',
+  }[x.status] || "");
+  const row = (x) => {
+    const j = data.jobById[x.job], who = data.empByName[x.employee] || { name: x.employee, department: "" };
+    return `<div class="ap-row ${x.status}" data-id="${x.id}" data-qty="${x.qty}">
+      ${KPI.avatar(who, { size: "38px" })}
+      <div class="ap-who"><b>${esc(x.employee)}</b><span>${dot(j?.department)}${esc(KPI.jobLabel(j))} · ${esc(KPI.fmtDate(x.date))}</span></div>
+      <div class="ap-sent">sent <b>${KPI.fmtFull(x.qty)}</b> ${esc(j?.unit || "")} ${chip(x)}${x.note ? `<small>“${esc(x.note)}”</small>` : ""}</div>
+      <div class="ap-act">
+        <input class="ap-q" inputmode="decimal" value="${x.status === "rejected" ? x.qty : x.final_qty ?? x.qty}" aria-label="Count to approve for ${esc(x.employee)}">
+        <input class="ap-note" placeholder="Reason (optional)" aria-label="Reason">
+        <button type="button" class="btn primary ap-ok">${KPI.ICONS.check}${x.status === "pending" ? "Approve" : "Save"}</button>
+        ${x.status === "rejected" ? "" : `<button type="button" class="btn danger ap-no">${KPI.ICONS.x}Reject</button>`}
+      </div></div>`;
+  };
+  el.innerHTML = `
+    <div class="ap-h"><h2>${pending.length ? `${pending.length} count${pending.length === 1 ? "" : "s"} waiting for approval` : "Nothing waiting for approval"}</h2>
+      <span class="sp"></span>
+      ${pending.length > 1 ? `<button type="button" class="btn" id="ap-all">${KPI.ICONS.check}Approve all ${pending.length} as sent</button>` : ""}
+      ${decided.length ? `<button type="button" class="linkbtn" id="ap-done">${showDecided ? "Hide" : "Show"} decided (last 30 days)</button>` : ""}</div>
+    ${pending.length ? `<div class="ap-list">${pending.map(row).join("")}</div>` : ""}
+    ${showDecided ? `<div class="ap-list decided">${decided.map(row).join("")}</div>` : ""}
+    <p class="hint">Change the number before approving to correct it; typing it in the sheet below works too. Once approved, the employee can't change it, but you still can here.</p>`;
+  const after = async (msg) => { await reloadData(); toast(msg); viewEntry(); };
+  el.querySelectorAll(".ap-row").forEach((r) => {
+    const id = Number(r.dataset.id), sent = Number(r.dataset.qty);
+    const busy = (on) => r.querySelectorAll("button").forEach((b) => (b.disabled = on));
+    r.querySelector(".ap-ok").onclick = async () => {
+      const q = KPI.parseQty(r.querySelector(".ap-q").value);
+      if (!(q > 0)) return toast("Enter the number to approve (more than 0)", true);
+      busy(true);
+      try {
+        await KPI.reviewSubmission(id, q === sent ? "approve" : "edit", q, r.querySelector(".ap-note").value.trim());
+        await after(q === sent ? "Approved" : `Approved as ${KPI.fmtFull(q)}`);
+      } catch (e) { busy(false); failed(e); }
+    };
+    r.querySelector(".ap-no")?.addEventListener("click", async () => {
+      busy(true);
+      try { await KPI.reviewSubmission(id, "reject", null, r.querySelector(".ap-note").value.trim()); await after("Rejected"); }
+      catch (e) { busy(false); failed(e); }
+    });
+  });
+  el.querySelector("#ap-all")?.addEventListener("click", async () => {
+    if (!confirm(`Approve all ${pending.length} counts exactly as they were sent?`)) return;
+    try { for (const x of pending) await KPI.reviewSubmission(x.id, "approve"); await after(`Approved ${pending.length} counts`); }
+    catch (e) { failed(e); }
+  });
+  el.querySelector("#ap-done")?.addEventListener("click", () => { showDecided = !showDecided; renderApprovals(); });
+}
+
 // ───────── jobs ─────────
 // The rows of the daily sheet, per department: optional machine / type, the job, and the unit it is counted in.
 function viewJobs() {
@@ -884,10 +1066,105 @@ function viewDepartments() {
 }
 
 // ───────── employees ─────────
+// A small modal on top of the page (logins, task lists). Returns the <dialog>; it removes itself when closed.
+function modal(html) {
+  const d = document.createElement("dialog");
+  d.className = "dlg";
+  d.innerHTML = html;
+  document.body.appendChild(d);
+  d.addEventListener("close", () => d.remove());
+  d.addEventListener("click", (e) => { if (e.target === d) d.close(); });
+  d.querySelectorAll("[data-close]").forEach((b) => (b.onclick = () => d.close()));
+  d.showModal();
+  return d;
+}
+// "Xk7-mPq2" — easy to read out to someone (no 0/O/1/l)
+const newPassword = () => { const c = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s = ""; const r = crypto.getRandomValues(new Uint32Array(8)); r.forEach((x, i) => { s += c[x % c.length] + (i === 3 ? "-" : ""); }); return s; };
+const suggestUsername = (name) => name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "").slice(0, 32) || "user";
+
+// Set or change one login (employee or TV screen). After saving it shows the details to pass on.
+function loginDialog({ kind, employee = "", username = "", label = "", onDone }) {
+  const exists = !!username;
+  const d = modal(`<form method="dialog" class="dlg-in" id="lg">
+    <h2>${kind === "employee" ? `Login for ${esc(employee)}` : exists ? `TV screen login “${esc(username)}”` : "New TV screen login"}</h2>
+    <p class="hint">${kind === "employee"
+      ? "They sign in on the app (or the website) with this username and password and see only their own page."
+      : "Sign each wall TV in once with this login and tick “Keep me signed in”. It can open every screen but change nothing."}</p>
+    <label class="fl">Username<input id="d-un" autocomplete="off" autocapitalize="none" spellcheck="false" value="${esc(username || (kind === "employee" ? suggestUsername(employee) : "tv1"))}"></label>
+    ${kind === "viewer" ? `<label class="fl">Label (where is it?)<input id="d-lb" value="${esc(label)}" placeholder="e.g. Factory floor TV"></label>` : ""}
+    <label class="fl">${exists ? "New password <small>(leave empty to keep the current one)</small>" : "Password"}
+      <span class="pwrow"><input id="d-pw" autocomplete="new-password" spellcheck="false" placeholder="${exists ? "unchanged" : "at least 6 characters"}" value="${exists ? "" : newPassword()}"><button type="button" class="btn" id="d-gen">New</button></span></label>
+    <div class="err" id="d-err"></div>
+    <div class="dlg-btns">${exists ? `<button type="button" class="btn danger" id="d-del">${KPI.ICONS.trash}Remove login</button>` : ""}<span class="sp"></span>
+      <button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn primary" id="d-ok">Save login</button></div>
+  </form>`);
+  const $ = (id) => d.querySelector("#" + id);
+  $("d-gen").onclick = () => { $("d-pw").value = newPassword(); };
+  const done = (html) => {
+    d.querySelector(".dlg-in").innerHTML = html + `<div class="dlg-btns"><span class="sp"></span><button type="button" class="btn primary" id="d-close">Done</button></div>`;
+    $("d-close").onclick = () => d.close();
+    onDone?.();
+  };
+  $("lg").onsubmit = async (e) => {
+    e.preventDefault();
+    const un = $("d-un").value.trim().toLowerCase(), pw = $("d-pw").value.trim();
+    $("d-ok").disabled = true; $("d-err").textContent = "";
+    try {
+      await KPI.adminUsers({ action: "save", kind, employee, username: un, password: pw || undefined, label: $("d-lb")?.value.trim(), current: username || undefined });
+      done(`<h2>Login saved</h2><p class="hint">Give ${kind === "employee" ? esc(employee) : "the TV"} these details:</p>
+        <div class="creds"><div>Username<b>${esc(un)}</b></div><div>Password<b>${pw ? esc(pw) : "(unchanged)"}</b></div></div>
+        <p class="hint">The password isn't shown again. You can always set a new one here.</p>`);
+    } catch (ex) { $("d-err").textContent = ex.message; $("d-ok").disabled = false; }
+  };
+  $("d-del")?.addEventListener("click", async () => {
+    if (!confirm(`Remove the login “${username}”? ${kind === "employee" ? `${employee} won't be able to sign in. Their counts stay.` : "That TV will be signed out."}`)) return;
+    try { await KPI.adminUsers({ action: "delete", kind, employee, username }); done(`<h2>Login removed</h2><p class="hint">“${esc(username)}” can't sign in any more.</p>`); }
+    catch (ex) { $("d-err").textContent = ex.message; }
+  });
+}
+
+// Pick an employee's standing list of tasks (they report counts on these in the app; new ones notify them).
+function tasksDialog(name, onDone) {
+  const mine = new Set(tasksOf(name));
+  const emp = data.empByName[name];
+  const groups = deptNames().map((dn) => ({ dn, jobs: data.jobs.filter((j) => j.active && j.department === dn) })).filter((g) => g.jobs.length);
+  // their own departments first
+  groups.sort((a, b) => (emp?.departments.includes(b.dn) ? 1 : 0) - (emp?.departments.includes(a.dn) ? 1 : 0));
+  const d = modal(`<form method="dialog" class="dlg-in wide" id="tk">
+    <h2>Tasks for ${esc(name)}</h2>
+    <p class="hint">Tick the tasks ${esc(name)} usually does. They see these in the app and send a count for each one they did that day. Newly added tasks are sent to them as a notification.</p>
+    <input type="search" id="t-q" class="t-q" placeholder="Find a task…" aria-label="Find a task">
+    <div class="tk-list">${groups.map((g) => `<fieldset data-d="${esc(g.dn)}"><legend>${dot(g.dn)}${esc(g.dn)}</legend>
+      ${g.jobs.map((j) => `<label class="tk" data-s="${esc((g.dn + " " + KPI.jobLabel(j)).toLowerCase())}"><input type="checkbox" value="${j.id}" ${mine.has(j.id) ? "checked" : ""}><span>${esc(KPI.jobLabel(j))}</span><small>${esc(j.unit)}</small></label>`).join("")}
+    </fieldset>`).join("")}</div>
+    <div class="err" id="t-err"></div>
+    <div class="dlg-btns"><span class="hint" id="t-n"></span><span class="sp"></span><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn primary" id="t-ok">Save tasks</button></div>
+  </form>`);
+  const count = () => { d.querySelector("#t-n").textContent = `${d.querySelectorAll(".tk input:checked").length} ticked`; };
+  d.addEventListener("change", count); count();
+  d.querySelector("#t-q").oninput = (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    d.querySelectorAll(".tk").forEach((l) => { l.hidden = q && !l.dataset.s.includes(q); });
+    d.querySelectorAll("fieldset").forEach((f) => { f.hidden = ![...f.querySelectorAll(".tk")].some((l) => !l.hidden); });
+  };
+  d.querySelector("#tk").onsubmit = async (e) => {
+    e.preventDefault();
+    const ids = [...d.querySelectorAll(".tk input:checked")].map((i) => Number(i.value));
+    d.querySelector("#t-ok").disabled = true;
+    try { await KPI.saveAssignments(name, ids); d.close(); toast(`Saved ${ids.length} task(s) for ${name}`); onDone?.(); }
+    catch (ex) { d.querySelector("#t-err").textContent = ex.message; d.querySelector("#t-ok").disabled = false; }
+  };
+}
+
 function viewEmployees() {
   const v = document.getElementById("view");
   const depts = deptNames();
   const photos = new WeakMap(); // <tr> -> photo data URL
+  const loginCell = (name) => {
+    const u = admin.logins?.[name];
+    return `${u ? `<span class="login-u">${KPI.ICONS.key}<b>${esc(u)}</b></span>` : '<span class="hint">No login</span>'}<button type="button" class="linkbtn set-login">${u ? "Change" : "Set login"}</button>`;
+  };
+  const tasksCell = (name) => { const n = tasksOf(name).length; return `<button type="button" class="btn tasks-btn">${KPI.ICONS.tasks}${n} task${n === 1 ? "" : "s"}</button>`; };
   const row = (e) => {
     const opts = [...new Set([...depts, ...e.departments])];
     return `<tr data-orig="${esc(e.name)}">
@@ -895,25 +1172,47 @@ function viewEmployees() {
       <label class="ph-av" title="Upload photo">${KPI.avatar(e, { size: "48px" })}<span class="ph-cam">${KPI.ICONS.camera}</span><input type="file" accept="image/*" class="ph-in"></label>
       <div class="ph-act"><label class="linkbtn">Upload<input type="file" accept="image/*" class="ph-in"></label><button type="button" class="linkbtn danger ph-rm" ${e.photo ? "" : "hidden"}>Remove</button></div>
     </div></td>
-    <td data-label="Name"><input class="nm" value="${esc(e.name)}" style="width:160px" aria-label="Name"></td>
+    <td data-label="Name"><input class="nm" value="${esc(e.name)}" style="width:150px" aria-label="Name"></td>
     <td data-label="Main department"><select class="dp" title="Main department" aria-label="Main department">${e.department ? "" : '<option value="">— choose —</option>'}${opts.map((d) => `<option ${d === e.department ? "selected" : ""}>${esc(d)}</option>`).join("")}</select></td>
     <td data-label="Also works in"><div class="chips also-chips">${opts.map((d) => { const on = e.departments.slice(1).includes(d); return `<label class="chip ${on ? "on" : ""}" ${d === e.department ? "hidden" : ""}><input type="checkbox" class="dp2" value="${esc(d)}" ${on ? "checked" : ""}>${esc(d)}</label>`; }).join("")}</div></td>
-    <td><label class="hint"><input type="checkbox" class="ac" ${e.active ? "checked" : ""}> Show</label></td></tr>`;
+    <td data-label="Login" class="lg-cell">${e.name ? loginCell(e.name) : '<span class="hint">Save first</span>'}</td>
+    <td data-label="Tasks" class="tk-cell">${e.name ? tasksCell(e.name) : ""}</td>
+    <td><label class="hint"><input type="checkbox" class="ac" ${e.active ? "checked" : ""}> Show</label></td>
+    <td><button type="button" class="icon-btn del-emp" title="Remove ${esc(e.name)}" aria-label="Remove ${esc(e.name)}">${KPI.ICONS.trash}</button></td></tr>`;
   };
-  v.innerHTML = `<p class="hint">Click a picture (or <b>Upload</b>) to add a profile photo — it is cropped to a square and compressed automatically. Pick each person's <b>main department</b> and tick any others they also work in: that decides where they appear on the TV, and which rows of Daily entry are shaded for them. Untick <b>Show</b> to hide someone from the TV without deleting their history. Renaming keeps past counts linked.</p>
-    <div class="card tcard"><table class="t emp-table"><thead><tr><th>Photo</th><th>Name</th><th>Main department</th><th>Also works in</th><th>TV</th></tr></thead><tbody id="tb">${data.employees.map(row).join("")}</tbody></table></div>
-    <div class="toolbar" style="margin-top:12px"><button class="btn" id="add">+ Add employee</button><span class="hint">Add or rename departments in the Departments tab.</span></div>
-    <div class="savebar"><button class="btn primary" id="save">Save employees</button></div>`;
+  v.innerHTML = `<p class="hint">Click a picture (or <b>Upload</b>) to add a profile photo. Pick each person's <b>main department</b> and tick any others they also work in: that decides where they appear on the TV. <b>Login</b> gives them a username and password for the app, where they see only their own page; <b>Tasks</b> are what they send counts for. Untick <b>Show</b> to hide someone from the TV without deleting their history. Renaming keeps past counts, login and tasks linked.</p>
+    <div class="card tcard"><table class="t emp-table"><thead><tr><th>Photo</th><th>Name</th><th>Main department</th><th>Also works in</th><th>Login</th><th>Tasks</th><th>TV</th><th></th></tr></thead><tbody id="tb">${data.employees.map(row).join("")}</tbody></table></div>
+    <div class="toolbar" style="margin-top:12px"><button class="btn" id="add">+ Add employee</button><span class="hint">Add or rename departments in the Departments tab. Save new people before giving them a login or tasks.</span></div>
+    <div class="savebar"><button class="btn primary" id="save">Save employees</button><span class="hint" id="chg"></span></div>
+    <section class="tv-logins">
+      <h2>TV screen logins</h2>
+      <p class="hint">The TV screens need a sign-in. Create a login for the TVs (one each, or one shared), then sign each TV in once with “Keep me signed in” ticked. These logins can open every screen but change nothing.</p>
+      <div class="card tcard"><table class="t tv-table"><thead><tr><th>Username</th><th>Where</th><th></th></tr></thead><tbody id="tvb">${(admin.viewers || []).map((x) => `<tr data-u="${esc(x.username)}" data-l="${esc(x.label)}">
+        <td data-label="Username"><span class="login-u">${KPI.ICONS.key}<b>${esc(x.username)}</b></span></td><td data-label="Where">${esc(x.label) || '<span class="hint">—</span>'}</td>
+        <td><button type="button" class="btn tv-edit">Change</button></td></tr>`).join("") || '<tr><td colspan="3" class="hint">No TV logins yet.</td></tr>'}</tbody></table></div>
+      <div class="toolbar" style="margin-top:12px"><button class="btn" id="add-tv">+ Add TV login</button></div>
+    </section>`;
   const tb = document.getElementById("tb");
   tb.querySelectorAll("tr").forEach((tr, i) => photos.set(tr, data.employees[i]?.photo || ""));
+  const mark = () => { dirty = true; document.getElementById("chg").textContent = "Unsaved changes"; };
   const paintAvatar = (tr) => {
     const name = tr.querySelector(".nm").value.trim() || "?";
     const tmp = { name, department: tr.querySelector(".dp").value, photo: photos.get(tr) || "" };
     tr.querySelector(".ph-av .av").outerHTML = KPI.avatar(tmp, { size: "48px" });
     tr.querySelector(".ph-rm").hidden = !tmp.photo;
   };
+  // refresh the Login / Tasks cells after a dialog, keeping anything typed in the table
+  const refreshCells = async () => {
+    const a = await KPI.adminData();
+    admin = { ...a, submissions: (a.submissions || []).map((s) => ({ ...s, qty: Number(s.qty), final_qty: s.final_qty == null ? null : Number(s.final_qty) })) };
+    tb.querySelectorAll("tr").forEach((tr) => {
+      const n = tr.dataset.orig; if (!n) return;
+      tr.querySelector(".lg-cell").innerHTML = loginCell(n);
+      tr.querySelector(".tk-cell").innerHTML = tasksCell(n);
+    });
+  };
   tb.addEventListener("change", async (e) => {
-    dirty = true;
+    mark();
     if (e.target.closest(".chip")) e.target.closest(".chip").classList.toggle("on", e.target.checked);
     const tr = e.target.closest("tr");
     if (e.target.classList.contains("ph-in") && e.target.files[0]) {
@@ -928,13 +1227,25 @@ function viewEmployees() {
     }
   });
   tb.addEventListener("click", (e) => {
-    if (e.target.classList.contains("ph-rm")) { const tr = e.target.closest("tr"); photos.set(tr, ""); paintAvatar(tr); dirty = true; }
+    const tr = e.target.closest("tr"); if (!tr) return;
+    const saved = tr.dataset.orig, typed = tr.querySelector(".nm").value.trim();
+    if (e.target.classList.contains("ph-rm")) { photos.set(tr, ""); paintAvatar(tr); mark(); }
+    if (e.target.closest(".set-login, .tasks-btn")) {
+      if (!saved || typed !== saved) return toast("Save employees first (new or renamed people)", true);
+      if (e.target.closest(".set-login")) loginDialog({ kind: "employee", employee: saved, username: admin.logins?.[saved] || "", onDone: refreshCells });
+      else tasksDialog(saved, refreshCells);
+    }
+    if (e.target.closest(".del-emp")) {
+      const who = typed || saved || "this row";
+      if (!confirm(`Remove ${who}? ${admin.logins?.[saved] ? "Their login is deleted too. " : ""}Their past counts stay saved. (Click Save employees to finish.)`)) return;
+      tr.remove(); mark();
+    }
   });
   tb.addEventListener("focusout", (e) => { if (e.target.classList.contains("nm")) paintAvatar(e.target.closest("tr")); });
-  tb.addEventListener("input", () => (dirty = true));
+  tb.addEventListener("input", mark);
   document.getElementById("add").onclick = () => {
     tb.insertAdjacentHTML("beforeend", row({ name: "", department: depts[0] || "", departments: depts[0] ? [depts[0]] : [], active: true, photo: "" }));
-    photos.set(tb.lastElementChild, ""); tb.lastElementChild.dataset.orig = ""; tb.lastElementChild.querySelector(".nm").focus(); dirty = true;
+    photos.set(tb.lastElementChild, ""); tb.lastElementChild.dataset.orig = ""; tb.lastElementChild.querySelector(".nm").focus(); mark();
   };
   document.getElementById("save").onclick = async () => {
     const list = [];
@@ -947,12 +1258,23 @@ function viewEmployees() {
       const department = [main, ...[...tr.querySelectorAll(".dp2:checked")].map((i) => i.value)].filter((d, i, a) => d && a.indexOf(d) === i).join(", ");
       list.push({ name, department, active: tr.querySelector(".ac").checked, photo: photos.get(tr) || "", renamedFrom: orig && orig !== name ? orig : undefined });
     }
-    try { await KPI.saveEmployees(list); await reloadData(); dirty = false; toast("Employees saved"); viewEmployees(); }
-    catch (e) { failed(e); }
+    // people removed (or emptied) who had a login: delete their login first
+    const kept = new Set(list.flatMap((x) => [x.name, x.renamedFrom].filter(Boolean)));
+    const gone = data.employees.map((x) => x.name).filter((n) => !kept.has(n) && admin.logins?.[n]);
+    try {
+      for (const n of gone) await KPI.adminUsers({ action: "delete", kind: "employee", employee: n });
+      await KPI.saveEmployees(list); await reloadData(); dirty = false; toast("Employees saved"); viewEmployees();
+    } catch (e) { failed(e); }
   };
+  // TV screen logins (saved straight away, separate from the table above)
+  document.getElementById("add-tv").onclick = () => loginDialog({ kind: "viewer", onDone: () => { reloadData().then(() => { if (!dirty) viewEmployees(); }); } });
+  document.getElementById("tvb").addEventListener("click", (e) => {
+    const tr = e.target.closest("tr[data-u]");
+    if (tr && e.target.closest(".tv-edit")) loginDialog({ kind: "viewer", username: tr.dataset.u, label: tr.dataset.l, onDone: () => { reloadData().then(() => { if (!dirty) viewEmployees(); }); } });
+  });
 }
 
-KPI.resume().then((ok) => (ok ? boot() : showLogin()));
+boot();
 </script>
 </body>
 </html>

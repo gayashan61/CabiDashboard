@@ -1,0 +1,12 @@
+{
+  "appId": "lk.tiljay.cfpro",
+  "appName": "Tiljay CF Pro",
+  "webDir": "www",
+  "server": {
+    "url": "https://kpidashboard-one.vercel.app",
+    "errorPath": "error.html"
+  },
+  "plugins": {
+    "PushNotifications": { "presentationOptions": ["badge", "sound", "alert"] }
+  }
+}
