@@ -4,6 +4,9 @@
    toggle, ?theme=light|dark in the URL, or DEFAULT_THEME in config.
    ═══════════════════════════════════════════════════════════════ */
 
+/* Anything marked hidden stays hidden, whatever display its classes give it */
+[hidden] { display: none !important; }
+
 /* ---------- Light theme (default tokens) ---------- */
 :root {
   color-scheme: light;
