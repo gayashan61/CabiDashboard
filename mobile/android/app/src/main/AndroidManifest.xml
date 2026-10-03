@@ -39,4 +39,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+: needed to show notifications (asked the first time the app starts) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

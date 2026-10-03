@@ -2,14 +2,17 @@
 //   node build-apk.mjs          the app opens the live site (https://kpidashboard-one.vercel.app)
 //   node build-apk.mjs --test   the app opens http://localhost:8090 — a test server on this computer,
 //                               reached from a USB-connected phone after:  adb reverse tcp:8090 tcp:8090
+//   node build-apk.mjs --url http://localhost:8080   the app opens any other address (e.g. this folder served
+//                               locally with the real database, to try changes before publishing them)
 // Needs Android Studio (its bundled Java 21) and the Android SDK.
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
 
-const test = process.argv.includes("--test");
+const arg = (name) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : null; };
 const LIVE = "https://kpidashboard-one.vercel.app";
-const url = test ? "http://localhost:8090" : LIVE;
+const url = arg("--url") || (process.argv.includes("--test") ? "http://localhost:8090" : LIVE);
+const test = url !== LIVE;
 const sdk = process.env.ANDROID_HOME || path.join(process.env.LOCALAPPDATA || "", "Android", "Sdk");
 const jdk = process.env.JAVA_HOME_21 || "C:/Program Files/Android/Android Studio/jbr";
 const env = { ...process.env, ANDROID_HOME: sdk, ANDROID_SDK_ROOT: sdk, JAVA_HOME: jdk };
@@ -22,7 +25,7 @@ const file = "capacitor.config.json";
 const original = fs.readFileSync(file, "utf8");
 const cfg = JSON.parse(original);
 cfg.server = { ...cfg.server, url };
-if (test) cfg.server.cleartext = true; else delete cfg.server.cleartext;
+if (url.startsWith("http:")) cfg.server.cleartext = true; else delete cfg.server.cleartext;
 fs.writeFileSync(file, JSON.stringify(cfg, null, 2));
 try {
   run("npx cap sync android");

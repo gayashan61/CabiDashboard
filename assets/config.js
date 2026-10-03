@@ -12,9 +12,9 @@ window.KPI_CONFIG = {
   APP_NAME: "Tiljay CF Pro",
   // Usernames sign in as <username>@LOGIN_DOMAIN (never emailed). Must match supabase/functions/admin-users.
   LOGIN_DOMAIN: "tiljay.local",
-  // Android app: push notifications. Turn on once Firebase is set up (README ➜ Android app) — before that,
-  // asking for push would crash the app.
-  ANDROID_PUSH: false,
+  // Android app: push notifications (Firebase project tiljay-cf-pro, see README ➜ Push notifications).
+  // Only turn this on for an app built with mobile/android/app/google-services.json — without it, asking for push crashes the app.
+  ANDROID_PUSH: true,
   COMPANY_NAME: "Tiljay Computer Forms Production",
 
   // Which day the TV screens show as "Today":
