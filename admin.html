@@ -188,6 +188,17 @@
   .tasks-btn svg { width: 15px; height: 15px; color: var(--accent-ink); }
   .del-emp { width: 34px; height: 34px; box-shadow: none; color: var(--critical-ink); }
   .del-emp svg { width: 15px; height: 15px; }
+  /* Employees: buttons above the table; on a computer the table fits the screen and scrolls inside, titles fixed */
+  .emp-top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 4px 0 12px; }
+  .emp-top .btn svg { width: 15px; height: 15px; }
+  .emp-scroll { overflow: auto; overscroll-behavior: contain; }
+  .emp-scroll table.t thead th { position: sticky; top: 0; z-index: 2; box-shadow: inset 0 -1px 0 var(--grid); }
+  .bulk-list { max-height: 52vh; overflow: auto; border: 1px solid var(--border); border-radius: 10px; }
+  .bulk-list table.t td { padding: 8px 12px; }
+  .bulk-list code { font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+  .bulk-list .st { white-space: nowrap; font-size: 13px; }
+  .bulk-list .st.ok { color: var(--good-ink, var(--good)); font-weight: 600; }
+  .bulk-list .st.bad { color: var(--critical-ink); white-space: normal; }
   .tv-logins { margin-top: 36px; }
   .tv-logins h2 { font-size: 18px; margin: 0 0 6px; }
   .err { color: var(--critical-ink); min-height: 1.4em; font-size: 13px; margin-top: 8px; }
@@ -274,6 +285,7 @@
   @media (max-width: 720px) {
     .appbar .brand-eyebrow { display: none; }
     .tcard { overflow: visible; background: none; border: 0; box-shadow: none; }
+    .emp-scroll { max-height: none !important; }
     .jobs-card.tcard { margin-bottom: 18px; }
     .jobs-h { padding: 4px 2px 10px; border: 0; }
     .jobs-add { padding: 0; border: 0; }
@@ -1123,6 +1135,61 @@ function loginDialog({ kind, employee = "", username = "", label = "", onDone })
   });
 }
 
+// Logins for everyone who has none yet: username = first name, password = <username>@123.
+// Taken usernames get a number (isitha2); names that make no valid username are left for "Set login".
+function bulkLoginsDialog(names, onDone) {
+  const taken = new Set([...Object.values(admin.logins || {}), ...(admin.viewers || []).map((v) => v.username)]);
+  const clean = (s) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9._-]/g, "");
+  const plan = names.map((name) => {
+    let base = clean(name.trim().split(/\s+/)[0] || "");
+    if (base.length < 3) base = suggestUsername(name);
+    if (base.length < 3) return { name, skip: "Name too short for a username — use Set login" };
+    base = base.slice(0, 28);
+    let u = base, n = 1;
+    while (taken.has(u)) u = base + ++n;
+    taken.add(u);
+    return { name, username: u, password: u + "@123" };
+  });
+  const todo = plan.filter((p) => !p.skip);
+  const d = modal(`<form method="dialog" class="dlg-in wide" id="bk">
+    <h2>Create logins for ${todo.length} ${todo.length === 1 ? "person" : "people"}</h2>
+    <p class="hint">Username = first name, password = username@123 (for example <b>isitha</b> / <b>isitha@123</b>). People who already have a login keep it. You can change any of them later with <b>Change</b>.</p>
+    <div class="bulk-list"><table class="t"><thead><tr><th>Employee</th><th>Username</th><th>Password</th><th></th></tr></thead><tbody>${plan.map((p, i) => `<tr data-i="${i}">
+      <td data-label="Employee"><b>${esc(p.name)}</b></td>
+      <td data-label="Username">${p.skip ? "—" : `<code>${esc(p.username)}</code>`}</td>
+      <td data-label="Password">${p.skip ? "—" : `<code>${esc(p.password)}</code>`}</td>
+      <td class="st ${p.skip ? "bad" : ""}">${p.skip ? esc(p.skip) : ""}</td></tr>`).join("")}</tbody></table></div>
+    <div class="err" id="b-err"></div>
+    <div class="dlg-btns" id="b-btns"><span class="hint" id="b-n"></span><span class="sp"></span><button type="button" class="btn" data-close>Cancel</button>
+      <button type="submit" class="btn primary" id="b-ok" ${todo.length ? "" : "disabled"}>Create ${todo.length} login${todo.length === 1 ? "" : "s"}</button></div>
+  </form>`);
+  const $ = (id) => d.querySelector("#" + id);
+  let running = false;
+  d.addEventListener("cancel", (e) => { if (running) e.preventDefault(); });
+  $("bk").onsubmit = async (e) => {
+    e.preventDefault();
+    running = true;
+    $("b-btns").querySelectorAll("button").forEach((b) => (b.disabled = true));
+    let ok = 0, bad = 0;
+    for (const [i, p] of plan.entries()) {
+      if (p.skip) continue;
+      const st = d.querySelector(`tr[data-i="${i}"] .st`);
+      st.textContent = "Creating…";
+      try { await KPI.adminUsers({ action: "save", kind: "employee", employee: p.name, username: p.username, password: p.password }); p.done = true; ok++; st.className = "st ok"; st.textContent = "✓ Created"; }
+      catch (ex) { bad++; st.className = "st bad"; st.textContent = ex.message; }
+      $("b-n").textContent = `${ok + bad} of ${todo.length}`;
+    }
+    running = false;
+    $("b-n").textContent = `${ok} created${bad ? `, ${bad} failed` : ""}`;
+    const list = plan.filter((p) => p.done).map((p) => `${p.name}: ${p.username} / ${p.password}`).join("\n");
+    $("b-btns").innerHTML = `<span class="hint">${ok} created${bad ? `, ${bad} failed (see the list)` : ""}</span><span class="sp"></span>
+      ${ok ? '<button type="button" class="btn" id="b-copy">Copy list</button>' : ""}<button type="button" class="btn primary" id="b-done">Done</button>`;
+    $("b-copy")?.addEventListener("click", () => navigator.clipboard.writeText(list).then(() => toast("List copied"), () => toast("Couldn't copy — select the list instead", true)));
+    $("b-done").onclick = () => d.close();
+    onDone?.();
+  };
+}
+
 // Pick an employee's standing list of tasks (they report counts on these in the app; new ones notify them).
 function tasksDialog(name, onDone) {
   const mine = new Set(tasksOf(name));
@@ -1156,6 +1223,18 @@ function tasksDialog(name, onDone) {
   };
 }
 
+// On a computer the employees table takes the rest of the screen (scrolling inside), so the buttons
+// above it and Save below it stay in view. Phones keep one long page of cards.
+function fitEmployees() {
+  const box = document.getElementById("emp-scroll");
+  if (!box) return;
+  if (matchMedia("(max-width: 720px)").matches) { box.style.maxHeight = ""; return; }
+  const bar = document.querySelector(".savebar");
+  const top = box.getBoundingClientRect().top + scrollY;
+  box.style.maxHeight = Math.max(300, innerHeight - top - (bar ? bar.offsetHeight + 16 : 0) - 8) + "px";
+}
+addEventListener("resize", fitEmployees);
+
 function viewEmployees() {
   const v = document.getElementById("view");
   const depts = deptNames();
@@ -1180,9 +1259,9 @@ function viewEmployees() {
     <td><label class="hint"><input type="checkbox" class="ac" ${e.active ? "checked" : ""}> Show</label></td>
     <td><button type="button" class="icon-btn del-emp" title="Remove ${esc(e.name)}" aria-label="Remove ${esc(e.name)}">${KPI.ICONS.trash}</button></td></tr>`;
   };
-  v.innerHTML = `<p class="hint">Click a picture (or <b>Upload</b>) to add a profile photo. Pick each person's <b>main department</b> and tick any others they also work in: that decides where they appear on the TV. <b>Login</b> gives them a username and password for the app, where they see only their own page; <b>Tasks</b> are what they send counts for. Untick <b>Show</b> to hide someone from the TV without deleting their history. Renaming keeps past counts, login and tasks linked.</p>
-    <div class="card tcard"><table class="t emp-table"><thead><tr><th>Photo</th><th>Name</th><th>Main department</th><th>Also works in</th><th>Login</th><th>Tasks</th><th>TV</th><th></th></tr></thead><tbody id="tb">${data.employees.map(row).join("")}</tbody></table></div>
-    <div class="toolbar" style="margin-top:12px"><button class="btn" id="add">+ Add employee</button><span class="hint">Add or rename departments in the Departments tab. Save new people before giving them a login or tasks.</span></div>
+  v.innerHTML = `<p class="hint">Pick each person's <b>main department</b> and any others they work in (that decides where they appear on the TV). <b>Login</b> = their username and password for the app; <b>Tasks</b> = what they send counts for. Untick <b>Show</b> to hide someone from the TV but keep their history. Click a picture to add a photo.</p>
+    <div class="emp-top"><button class="btn" id="add">+ Add employee</button><button class="btn" id="bulk" hidden></button><span class="hint">Save new people before giving them a login or tasks.</span></div>
+    <div class="card tcard emp-scroll" id="emp-scroll"><table class="t emp-table"><thead><tr><th>Photo</th><th>Name</th><th>Main department</th><th>Also works in</th><th>Login</th><th>Tasks</th><th>TV</th><th></th></tr></thead><tbody id="tb">${data.employees.map(row).join("")}</tbody></table></div>
     <div class="savebar"><button class="btn primary" id="save">Save employees</button><span class="hint" id="chg"></span></div>
     <section class="tv-logins">
       <h2>TV screen logins</h2>
@@ -1210,6 +1289,19 @@ function viewEmployees() {
       tr.querySelector(".lg-cell").innerHTML = loginCell(n);
       tr.querySelector(".tk-cell").innerHTML = tasksCell(n);
     });
+    paintBulk();
+  };
+  // "Create logins (n)" for the saved people who have none yet
+  const noLogin = () => data.employees.map((x) => x.name).filter((n) => n && !admin.logins?.[n]);
+  const paintBulk = () => {
+    const b = document.getElementById("bulk"), n = noLogin().length;
+    b.hidden = !n;
+    b.innerHTML = `${KPI.ICONS.key}Create logins for everyone without one (${n})`;
+  };
+  paintBulk();
+  document.getElementById("bulk").onclick = () => {
+    if (dirty) return toast("Save employees first", true);
+    bulkLoginsDialog(noLogin(), refreshCells);
   };
   tb.addEventListener("change", async (e) => {
     mark();
@@ -1245,8 +1337,10 @@ function viewEmployees() {
   tb.addEventListener("input", mark);
   document.getElementById("add").onclick = () => {
     tb.insertAdjacentHTML("beforeend", row({ name: "", department: depts[0] || "", departments: depts[0] ? [depts[0]] : [], active: true, photo: "" }));
-    photos.set(tb.lastElementChild, ""); tb.lastElementChild.dataset.orig = ""; tb.lastElementChild.querySelector(".nm").focus(); mark();
+    const tr = tb.lastElementChild;
+    photos.set(tr, ""); tr.dataset.orig = ""; tr.scrollIntoView({ block: "nearest" }); tr.querySelector(".nm").focus(); mark();
   };
+  fitEmployees();
   document.getElementById("save").onclick = async () => {
     const list = [];
     for (const tr of tb.querySelectorAll("tr")) {
