@@ -1,3 +1,8 @@
 supabase/
 .mcp.json
 .claude/
+mobile/
+tests/
+claude/
+CLAUDE.md
+README.md

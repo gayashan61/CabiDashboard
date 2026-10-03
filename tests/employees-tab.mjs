@@ -1,0 +1,71 @@
+import { setup } from "./harness.mjs";
+import fs from "fs";
+const h = await setup();
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const results = [];
+const check = (ok, label, extra = "") => { results.push(!!ok); console.log(ok ? "ok  " : "FAIL", label, typeof extra === "string" ? extra : JSON.stringify(extra)); };
+fs.mkdirSync("eshots", { recursive: true });
+await h.q("insert into employees (name, department, sort) values ('Kasun Perera', 'Sheets', 21), ('Al', 'Sheets', 22)");
+const inView = (page, sel) => page.$eval(sel, (e) => { const r = e.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; });
+
+const { page, errors } = await h.open("admin.html", { as: "admin", w: 1600, h: 931, freeze: false });
+await page.waitForSelector(".tabs");
+await page.click('.tabs [data-t="employees"]'); await page.waitForSelector("#tb"); await wait(500);
+check(await inView(page, "#add"), "+ Add employee visible without scrolling");
+check(await inView(page, "#save"), "Save employees visible without scrolling");
+const box = await page.$eval("#emp-scroll", (b) => ({ sh: b.scrollHeight, ch: b.clientHeight, bottom: b.getBoundingClientRect().bottom }));
+check(box.sh > box.ch && box.bottom <= 931, "table scrolls inside a box that fits the screen", box);
+const bulkTxt = await page.$eval("#bulk", (b) => (b.hidden ? "" : b.textContent));
+check(/\(21\)/.test(bulkTxt), "bulk button counts people without a login (22 - Chamara)", bulkTxt);
+await page.screenshot({ path: "eshots/1-employees.png" });
+// scroll the table: header stays, page doesn't move
+await page.$eval("#emp-scroll", (b) => (b.scrollTop = 400)); await wait(200);
+const th = await page.$eval("#emp-scroll thead th", (t) => t.getBoundingClientRect().top - document.getElementById("emp-scroll").getBoundingClientRect().top);
+check(Math.abs(th) < 2 && (await page.evaluate(() => scrollY)) === 0, "column titles stay put while the table scrolls", th);
+await page.screenshot({ path: "eshots/2-scrolled.png" });
+// add employee: new row is visible and focused
+await page.click("#add"); await wait(300);
+check(await page.evaluate(() => document.activeElement.classList.contains("nm") && (() => { const r = document.activeElement.getBoundingClientRect(), b = document.getElementById("emp-scroll").getBoundingClientRect(); return r.top >= b.top && r.bottom <= b.bottom; })()), "new row scrolled into view and focused");
+await page.click("#bulk"); await wait(300);
+check(/Save employees first/.test(await page.$eval("#toast", (t) => t.textContent)), "bulk asks to save first when there are unsaved rows");
+await page.evaluate(() => document.querySelector("#tb tr:last-child .del-emp").click()); await wait(200);
+// reload view cleanly
+await page.reload({ waitUntil: "networkidle0" }); await page.waitForSelector(".tabs");
+await page.click('.tabs [data-t="employees"]'); await page.waitForSelector("#tb"); await wait(400);
+await page.click("#bulk"); await page.waitForSelector("dialog.dlg #bk");
+const plan = await page.$$eval("dialog .bulk-list tbody tr", (rows) => rows.map((r) => [...r.cells].map((c) => c.textContent.trim()).join(" | ")));
+console.log(plan.join("\n"));
+check(plan.some((r) => r.startsWith("Kasun | kasun | kasun@123")), "Kasun ➜ kasun / kasun@123");
+check(plan.some((r) => r.startsWith("Kasun Perera | kasun2 | kasun2@123")), "second Kasun ➜ kasun2");
+check(plan.some((r) => r.startsWith("Al |") && /too short/.test(r)), "too-short name is skipped with a reason");
+check(!plan.some((r) => r.startsWith("Chamara |")), "Chamara (already has a login) is left out");
+await page.screenshot({ path: "eshots/3-bulk-plan.png" });
+await page.click("#b-ok");
+await page.waitForSelector("#b-done", { timeout: 30000 });
+await page.screenshot({ path: "eshots/4-bulk-done.png" });
+const rows = (await h.q("select name, username from employees where username is not null order by sort")).map((r) => `${r.name}=${r.username}`);
+check(rows.length === 22 - 1, "logins created in the database (all but Al)", rows.length);
+check(h.accounts.get("kasun@tiljay.local")?.password === "kasun@123" && h.accounts.get("kasun2@tiljay.local")?.password === "kasun2@123", "passwords set as asked");
+await page.click("#b-done"); await wait(500);
+check(await page.$eval("#bulk", (b) => b.hidden === false && /\(1\)/.test(b.textContent)), "button now offers only the 1 left (Al)");
+check(/kasun/.test(await page.$eval('#tb tr[data-orig="Kasun"] .lg-cell', (c) => c.textContent)), "login column updated without reload");
+await page.screenshot({ path: "eshots/5-after.png" });
+check(errors.length === 0, "no page errors", errors.join(" | "));
+await page.close();
+// the new login works
+const r2 = await h.open("index.html", { as: null, w: 390, h: 844, mobile: true, freeze: false });
+await r2.page.waitForSelector("#signin:not([hidden])");
+await r2.page.type("#un", "Kasun"); await r2.page.type("#pw", "kasun@123");
+await Promise.all([r2.page.waitForNavigation({ waitUntil: "networkidle0" }).catch(() => {}), r2.page.click("#go")]);
+check(r2.page.url().endsWith("me.html"), "Kasun signs in with kasun / kasun@123 and lands on their page", r2.page.url());
+await r2.page.close();
+// phone: employees tab is still one long page of cards
+const m = await h.open("admin.html", { as: "admin", w: 390, h: 844, mobile: true, freeze: false });
+await m.page.waitForSelector(".tabs, .appmenu");
+await m.page.evaluate(() => { const t = document.querySelector('[data-t="employees"]'); t && t.click(); }); await m.page.waitForSelector("#tb"); await wait(400);
+check(await m.page.$eval("#emp-scroll", (b) => getComputedStyle(b).maxHeight === "none"), "phone: no inner scroll box");
+await m.page.screenshot({ path: "eshots/6-phone.png" });
+check(m.errors.length === 0, "phone: no errors", m.errors.join(" | "));
+await h.close();
+console.log(results.every(Boolean) ? "\nALL PASSED" : `\n${results.filter((x) => !x).length} FAILED`);
+process.exit(0);

@@ -1,0 +1,13 @@
+{
+  "name": "tiljay-cf-pro-tests",
+  "private": true,
+  "type": "module",
+  "description": "Tests: the database in memory (PGlite) and the pages in Edge with a mocked Supabase. See README.md.",
+  "scripts": {
+    "test": "node database.mjs && node roles.mjs && node screens.mjs && node phone-layout.mjs && node employees-tab.mjs && node notifications.mjs && node hidden.mjs"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "puppeteer-core": "^25.12.0"
+  }
+}

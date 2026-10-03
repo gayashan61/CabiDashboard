@@ -1,0 +1,6 @@
+- [Deployment targets](deployment-targets.md) — Supabase ref, Vercel project kpidashboard (Torbit), public repo + .gitignore, pushing as gayashan61, prod DB writes blocked by classifier
+- [Data model history](count-per-department-model.md) — % target → per department → per task (DB `jobs`); prod state, leftover "Other" tasks, unconfirmed units
+- [Go-live and backups](go-live-and-backups.md) — live 2026-09-30 as Tiljay CF Pro; free plans have no backups; Pro + nightly private-repo backup recommended, undecided
+- [User working style](user-working-style.md) — writes Singlish, English replies OK, approves every push explicitly
+- [Testing approach](testing-approach.md) — suite in repo tests/ (npm test, needs localhost:8080 + docs/test-data.json); isolated contexts, bringToFront
+- [Logins, approvals, Android app](logins-approvals-app.md) — all live 2026-10-03 incl. phone push + final APK; debug keystore matters for app updates

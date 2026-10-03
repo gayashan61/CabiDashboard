@@ -11,3 +11,9 @@ mobile/node_modules/
 mobile/dist/
 mobile/build.log
 mobile/android/app/google-services.json
+
+# Tests: dependencies and screenshots (the sample data they use lives in docs/, also private)
+tests/node_modules/
+tests/*shots/
+tests/*.png
+tests/dl*/
