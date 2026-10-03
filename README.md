@@ -77,6 +77,7 @@ Every page works on a phone (from 360px wide) and a tablet. From 1024px up, the 
 4. Sign in as the admin ➜ Employees ➜ add a **TV screen login** and sign each TV in with it. Then give employees logins and tasks.
 
 ### Push notifications (Android app)
+Set up on 2026-10-03 (Firebase project `tiljay-cf-pro`; the key files are kept in `docs/`, never in git). To set it up again:
 1. Create a free Firebase project ➜ add an **Android app** with package name `lk.tiljay.cfpro` ➜ download `google-services.json` into `mobile/android/app/` (kept out of git).
 2. Firebase ➜ Project settings ➜ Service accounts ➜ **Generate new private key**.
 3. Supabase ➜ Edge Functions ➜ **Secrets**: `FIREBASE_SERVICE_ACCOUNT` = the whole key JSON; `PUSH_WEBHOOK_SECRET` = any long random text.
@@ -88,6 +89,7 @@ Every page works on a phone (from 360px wide) and a tablet. From 1024px up, the 
 The app (`mobile/`) is the website in a Capacitor shell: it opens https://kpidashboard-one.vercel.app, so site updates reach it without a new app. It adds the app icon, push notifications and a "can't reach the server" page.
 - Build: `cd mobile && npm install && node build-apk.mjs` ➜ `mobile/dist/TiljayCFPro.apk` (needs Android Studio). Install it on phones (allow installing from this source), or publish it on Google Play.
 - Test build against a local copy of the data: `node build-apk.mjs --test` opens `http://localhost:8090` on a USB-connected phone after `adb reverse tcp:8090 tcp:8090`.
+- Try site changes in the app before publishing them: serve this folder on port 8080, `node build-apk.mjs --url http://localhost:8080`, then `adb reverse tcp:8080 tcp:8080` (uses the real database).
 
 ## Setup
 
