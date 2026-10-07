@@ -158,9 +158,9 @@ for (const [who, path, expect] of [["chamara", "admin.html", "me.html"], ["tv", 
   const notes = await page.$$eval(".nt b", (b) => b.map((x) => x.textContent));
   check(notes.includes("Count changed by the admin") && notes.includes("Count rejected") && notes.includes("2 new tasks for you"), "notifications list", notes);
   await shot(page, "me-notifications");
-  await page.click('[data-t="perf"]'); await page.waitForSelector(".ps-head");
-  const chips = await page.$$eval(".pseg button", (b) => b.map((x) => x.textContent.trim()));
-  check(chips.includes("All Sheets"), "performance: the profile with an “All Sheets” chart", chips.slice(0, 4));
+  await page.click('[data-t="perf"]'); await page.waitForSelector(".pcard .dnav, #pane .dnav");
+  const chips = await page.$$eval("#pane [data-key], #pane .seg3 button", (b) => b.map((x) => x.textContent.trim()));
+  check(chips.includes("All Sheets") && chips.includes("Weekly") && chips.includes("Monthly"), "performance: date bar, Daily / Weekly / Monthly and an “All Sheets” chart", chips.slice(0, 6));
   await shot(page, "me-performance");
   const ow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   check(ow <= 1, "no sideways scroll on the phone", ow);

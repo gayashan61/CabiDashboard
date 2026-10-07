@@ -29,16 +29,35 @@
   .hello { display: flex; align-items: center; gap: 14px; margin: 4px 0 16px; }
   .hello h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
   .hello .ps-dept, .hello .sub { color: var(--muted); font-size: 14px; }
+  .hello .ps-dept { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+  .hello .dept-lbl { white-space: nowrap; }
   .tabs { display: flex; gap: 2px; padding: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 16px; }
   .tabs button { flex: 1; min-height: 44px; background: none; border: 0; border-radius: 9px; font: inherit; font-weight: 500; color: var(--ink-2); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
   .tabs button.on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--shadow); }
   .tabs .n { padding: 0 6px; border-radius: 999px; background: var(--critical); color: #fff; font-size: 11px; font-weight: 700; }
-  .days { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
-  .days button { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--ink-2); font: inherit; font-weight: 600; cursor: pointer; }
-  .days button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
-  .days input { min-height: 44px; padding: 0 10px; border: 1px solid var(--axis); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
+  /* date bar on both tabs: ‹ date › — tap the date for the calendar */
+  .dnav { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .dnav .icon-btn { width: 46px; height: 46px; flex: 0 0 auto; box-shadow: none; }
+  .dnav .icon-btn:disabled { opacity: .35; cursor: default; }
+  .dn-pick { position: relative; flex: 1; min-width: 0; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-weight: 600; cursor: pointer; }
+  .dn-pick:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .dn-d { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dn-w { color: var(--accent-ink); }
+  .dn-pick svg { width: 18px; height: 18px; color: var(--muted); flex: 0 0 auto; }
+  .dn-pick input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; margin: 0; padding: 0; -webkit-appearance: none; appearance: none; cursor: pointer; }
+  .dn-live { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: -6px 0 14px; font-size: 13px; color: var(--muted); }
+  /* My tasks: progress for the day */
+  .sum { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 14px 16px; }
+  .sum-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .sum-top b { font-size: 20px; letter-spacing: -0.02em; }
+  .sum-top span { color: var(--muted); font-size: 13px; }
+  .prog { display: flex; height: 8px; border-radius: 999px; background: var(--surface-3); overflow: hidden; margin: 10px 0 8px; }
+  .prog i { display: block; height: 100%; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); }
+  .legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--c); }
   .dept-h { margin: 18px 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; }
-  .task { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 14px 16px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px; }
+  .task { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--s, var(--axis)); border-radius: 14px; box-shadow: var(--shadow); padding: 14px 16px 14px 14px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 12px; }
+  .task.s-ok { --s: var(--good); } .task.s-wait { --s: var(--warning); } .task.s-bad { --s: var(--critical); }
   .task-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
   .task-name { font-size: 17px; font-weight: 600; }
   .task-name .m { color: var(--muted); font-weight: 500; margin-right: 6px; }
@@ -46,22 +65,60 @@
   .state { font-size: 13px; }
   .state small { display: block; margin-top: 4px; color: var(--muted); text-align: right; }
   .task-row { display: flex; gap: 8px; align-items: center; }
-  .task-row input { flex: 1; min-width: 0; min-height: 50px; padding: 0 14px; border: 1px solid var(--axis); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 20px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
-  .task-row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-  .task-row input.bad { border-color: var(--critical); background: var(--critical-soft); }
-  .task-row .unit { color: var(--muted); font-weight: 600; min-width: 48px; }
-  .task-row .btn { min-height: 50px; padding: 0 18px; font-size: 15px; }
+  /* the amount box, with the unit inside it */
+  .qty { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 14px; border: 1px solid var(--axis); border-radius: 12px; background: var(--surface); }
+  .qty:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .qty.bad { border-color: var(--critical); background: var(--critical-soft); }
+  .qty input { flex: 1; min-width: 0; height: 50px; border: 0; padding: 0; background: none; outline: none; color: var(--ink); font: inherit; font-size: 22px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+  .qty .unit { color: var(--muted); font-weight: 600; font-size: 14px; white-space: nowrap; }
+  .task-row .btn { min-height: 52px; padding: 0 22px; font-size: 16px; border-radius: 12px; }
   .task-done { display: flex; align-items: baseline; gap: 8px; }
   .task-done b { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
   .task-done span { color: var(--muted); }
   .linkbtn { background: none; border: 0; padding: 0; font: inherit; font-size: 14px; font-weight: 600; color: var(--accent-ink); cursor: pointer; min-height: 32px; }
   .linkbtn.danger { color: var(--critical-ink); }
   .empty-card { background: var(--surface); border: 1px dashed var(--axis); border-radius: 14px; padding: 24px; text-align: center; color: var(--muted); }
-  /* performance: the TV profile, laid out for this page */
-  .ps { grid-template-rows: auto auto; }
-  .ps .chart-fill { flex: none; height: 15rem; }
-  .ps .chart-area { flex: none; height: 17rem; }
-  .hist { margin-top: 18px; }
+  /* Performance */
+  .pcard { padding: 16px; margin-bottom: 12px; }
+  .pday-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .pday-h h2, .pchart-h h2 { margin: 0; font-size: 17px; }
+  .pbig { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; margin-bottom: 4px; }
+  .pbig b { font-size: 44px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .pbig span { color: var(--muted); font-weight: 600; }
+  .prow { padding: 12px 0 2px; border-top: 1px solid var(--grid); margin-top: 10px; }
+  .prow-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .prow-h b { font-size: 18px; font-variant-numeric: tabular-nums; }
+  .prow-h > span:last-child { white-space: nowrap; }
+  .prow .bar { height: 10px; }
+  .prow-f { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+  .stat { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+  .stat small { display: block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .stat b { display: block; margin-top: 4px; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat span { font-size: 12px; color: var(--muted); }
+  .pchart-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .pchart-h span { font-size: 13px; color: var(--muted); }
+  .seg3 { display: flex; gap: 2px; padding: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; }
+  .seg3 button { flex: 1; min-height: 40px; border: 0; border-radius: 9px; background: none; color: var(--ink-2); font: inherit; font-weight: 600; cursor: pointer; }
+  .seg3 button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding-top: 10px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chips button { flex: 0 0 auto; min-height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+  .chips button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+  .pchart { position: relative; height: 210px; margin-top: 16px; }
+  .pchart .cols7 { gap: 8px; } .pchart .cols7.n12 { gap: 3px; }
+  .pchart .c7-v { font-size: 12px; } .pchart .cols7.n12 .c7-v { font-size: 9.5px; }
+  .pchart .c7-d { margin-top: 6px; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; } .pchart .cols7.n12 .c7-d { font-size: 9.5px; }
+  .pchart .c7.today .c7-d { color: var(--ink); font-weight: 700; }
+  .pchart .c7[data-pday] { cursor: pointer; }
+  .ptot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--grid); font-size: 13px; color: var(--muted); }
+  .ptot b { color: var(--ink); }
+  .hist { margin-top: 0; }
+  .hist-day { margin-top: 14px; padding-bottom: 6px; border-bottom: 1px solid var(--grid); font-size: 13px; font-weight: 700; color: var(--muted); }
+  .hist-day:first-of-type { margin-top: 10px; }
+  .hist .hist-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .tchips { margin: 4px 0 -4px; }
+  .tchips .n { margin-left: 6px; color: var(--muted); font-weight: 500; }
   .hist h2 { font-size: 17px; margin: 0 0 8px; }
   .hist-row { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--grid); font-size: 14px; }
   .hist-row .d { color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -74,6 +131,7 @@
   .err { color: var(--critical-ink); }
   @media (max-width: 640px) {
     .top .brand-eyebrow { display: none; }
+    .stat { padding: 9px 10px; } .stat b { font-size: 19px; }
     .hello h1 { font-size: 21px; }
     .hist-row { grid-template-columns: 70px minmax(0, 1fr) auto; }
   }
@@ -110,6 +168,7 @@ function toast(msg, error) {
 
 let data = null, me = null, tab = location.hash === "#notifications" ? "notes" : location.hash === "#performance" ? "perf" : "today";
 let day = KPI.todayKey();
+let tdept = null;  // My tasks: department shown (null = all)
 const minDay = () => KPI.addDays(KPI.todayKey(), -7);
 const dot = (d) => `<span class="dept-dot" style="background:${KPI.deptColor(d)}"></span>`;
 
@@ -134,48 +193,89 @@ function render() {
   ({ today: paneToday, perf: panePerf, notes: paneNotes })[tab]();
 }
 
+// ───────── Date bar (both tabs): ‹ date › — the arrows step working days, the date opens the calendar ─────────
+const isWork = (d) => KPI_CONFIG.WORK_DAYS.includes(KPI.parseDay(d).getDay());
+function stepWork(d, dir, min, max) {
+  for (let i = 0; i < 14; i++) { d = KPI.addDays(d, dir); if (d < min || d > max) return null; if (isWork(d)) return d; }
+  return null;
+}
+const fmtDay = (d) => KPI.fmtDate(d, { weekday: "short", day: "numeric", month: "short", ...(d.slice(0, 4) !== KPI.todayKey().slice(0, 4) ? { year: "numeric" } : {}) });
+function dateNav(cur, min, max) {
+  const t = KPI.todayKey(), w = cur === t ? "Today" : cur === KPI.addDays(t, -1) ? "Yesterday" : "";
+  return `<div class="dnav">
+      <button type="button" class="icon-btn" data-step="-1" ${stepWork(cur, -1, min, max) ? "" : "disabled"} aria-label="Previous day">${KPI.ICONS.chevL}</button>
+      <label class="dn-pick"><span class="dn-d">${w ? `<span class="dn-w">${w}</span> · ` : ""}${esc(fmtDay(cur))}</span>${KPI.ICONS.calendar}
+        <input type="date" value="${cur}" min="${min}" max="${max}" aria-label="Pick a day"></label>
+      <button type="button" class="icon-btn" data-step="1" ${stepWork(cur, 1, min, max) ? "" : "disabled"} aria-label="Next day">${KPI.ICONS.chevR}</button>
+    </div>`;
+}
+function wireDateNav(root, cur, min, max, go, outOfRange) {
+  root.querySelectorAll(".dnav [data-step]").forEach((b) => (b.onclick = () => { const d = stepWork(cur, Number(b.dataset.step), min, max); if (d) go(d); }));
+  const inp = root.querySelector(".dnav input");
+  inp.onclick = () => { try { inp.showPicker(); } catch (e) {} };
+  inp.onchange = () => { const v = inp.value; if (v && v >= min && v <= max) go(v); else if (v) { inp.value = cur; toast(outOfRange, true); } };
+}
+
 // ───────── My tasks: send a count for each task done that day ─────────
 function paneToday() {
   const p = $("pane");
-  const t = KPI.todayKey(), y = KPI.addDays(t, -1);
+  const t = KPI.todayKey(), min = minDay();
   const subs = {};
   data.submissions.forEach((s) => { subs[s.date + "|" + s.job] = s; });
   const recorded = data.byKey[day + "|" + me.name] || {};
   const jobs = data.assignments.map((id) => data.jobById[id]).filter(Boolean);
-  let html = `<div class="days">
-      <button type="button" data-day="${t}" class="${day === t ? "on" : ""}">Today</button>
-      <button type="button" data-day="${y}" class="${day === y ? "on" : ""}">Yesterday</button>
-      <input type="date" id="pick" value="${day}" min="${minDay()}" max="${t}" aria-label="Pick a day">
-    </div>`;
+  // ok = approved or recorded by the admin, wait = sent and waiting, bad = rejected, todo = not sent
+  const stateOf = (j) => {
+    const s = subs[day + "|" + j.id];
+    if (s && (s.status === "approved" || s.status === "edited")) return "ok";
+    if (!s && recorded[j.id] != null) return "ok";
+    return s?.status === "pending" ? "wait" : s?.status === "rejected" ? "bad" : "todo";
+  };
+  let html = dateNav(day, min, t);
   if (!jobs.length) {
     html += `<div class="empty-card">No tasks are assigned to you yet.<br>Ask your admin to add your tasks.</div>`;
   } else {
+    const n = { ok: 0, wait: 0, bad: 0, todo: 0 };
+    jobs.forEach((j) => n[stateOf(j)]++);
+    const w = (k) => (n[k] / jobs.length * 100).toFixed(1) + "%";
+    const legend = [["ok", "var(--good)", "approved"], ["wait", "var(--warning)", "waiting"], ["bad", "var(--critical)", "rejected"], ["todo", "var(--axis)", "not sent"]]
+      .filter(([k]) => n[k]).map(([k, c, l]) => `<span style="--c:${c}">${n[k]} ${l}</span>`).join("");
+    html += `<div class="sum"><div class="sum-top"><b>${n.ok + n.wait} of ${jobs.length} sent</b><span>${n.todo ? `${n.todo} still to send` : n.wait ? "waiting for your admin" : "all done"}</span></div>
+      <div class="prog" role="img" aria-label="${n.ok} approved, ${n.wait} waiting, ${n.bad} rejected, ${n.todo} not sent"><i class="bg-good" style="width:${w("ok")}"></i><i class="bg-warning" style="width:${w("wait")}"></i><i class="bg-critical" style="width:${w("bad")}"></i></div>
+      <div class="legend">${legend}</div></div>`;
+    const tdepts = [...new Set(jobs.map((j) => j.department))];
+    if (!tdepts.includes(tdept)) tdept = null;
+    if (tdepts.length > 1) {
+      const todo = (dd) => jobs.filter((j) => j.department === dd && stateOf(j) === "todo").length;
+      html += `<div class="chips tchips" role="group" aria-label="Department"><button type="button" data-tdept="" class="${tdept ? "" : "on"}" aria-pressed="${!tdept}">All<span class="n">${jobs.length}</span></button>${tdepts.map((dd) =>
+        `<button type="button" data-tdept="${esc(dd)}" class="${dd === tdept ? "on" : ""}" aria-pressed="${dd === tdept}">${dot(dd)}${esc(dd)}<span class="n">${jobs.filter((j) => j.department === dd).length}</span></button>`).join("")}</div>`;
+    }
     let lastD = null;
-    for (const j of jobs) {
+    for (const j of jobs.filter((j) => !tdept || j.department === tdept)) {
       if (j.department !== lastD) { lastD = j.department; html += `<h3 class="dept-h">${dot(j.department)}${esc(j.department)}</h3>`; }
-      const s = subs[day + "|" + j.id], r = recorded[j.id];
+      const s = subs[day + "|" + j.id], r = recorded[j.id], st = stateOf(j);
       const label = `${j.machine ? `<span class="m">${esc(j.machine)}</span>` : ""}${esc(j.name)}<small>${esc(j.unit)}</small>`;
       let state = "", body;
-      if (s && (s.status === "approved" || s.status === "edited")) {
+      if (st === "ok" && s) {
         state = s.status === "approved" ? KPI.pill(1, "Approved") : `${KPI.pill(0.9, "Changed by admin")}<small>you sent ${fmtFull(s.qty)}</small>`;
         body = `<div class="task-done"><b>${fmtFull(s.final_qty)}</b><span>${esc(j.unit)}</span></div>${s.note ? `<p class="hint">“${esc(s.note)}”</p>` : ""}`;
-      } else if (!s && r != null) {
+      } else if (st === "ok") {
         state = KPI.pill(1, "Recorded by admin");
         body = `<div class="task-done"><b>${fmtFull(r)}</b><span>${esc(j.unit)}</span></div>`;
       } else {
-        if (s?.status === "pending") state = `${KPI.pill(null, "Waiting for approval")}`;
-        if (s?.status === "rejected") state = `${KPI.pill(0, "Rejected")}${s.note ? `<small>“${esc(s.note)}”</small>` : ""}`;
-        body = `<div class="task-row"><input inputmode="decimal" enterkeyhint="send" autocomplete="off" data-job="${j.id}" value="${s ? s.qty : ""}" placeholder="0" aria-label="How many ${esc(j.unit)} — ${esc(KPI.jobLabel(j))}"><span class="unit">${esc(j.unit)}</span>
-          <button type="button" class="btn primary send" data-job="${j.id}">${s?.status === "pending" ? "Update" : s?.status === "rejected" ? "Send again" : "Send"}</button></div>
-          ${s?.status === "pending" ? `<button type="button" class="linkbtn danger withdraw" data-job="${j.id}">Withdraw</button>` : ""}`;
+        if (st === "wait") state = KPI.pill(null, "Waiting for approval");
+        if (st === "bad") state = `${KPI.pill(0, "Rejected")}${s.note ? `<small>“${esc(s.note)}”</small>` : ""}`;
+        body = `<div class="task-row"><label class="qty"><input inputmode="decimal" enterkeyhint="send" autocomplete="off" data-job="${j.id}" value="${s ? s.qty : ""}" placeholder="0" aria-label="How many ${esc(j.unit)} — ${esc(KPI.jobLabel(j))}"><span class="unit">${esc(j.unit)}</span></label>
+          <button type="button" class="btn primary send" data-job="${j.id}">${st === "wait" ? "Update" : st === "bad" ? "Send again" : "Send"}</button></div>
+          ${st === "wait" ? `<button type="button" class="linkbtn danger withdraw" data-job="${j.id}">Withdraw</button>` : ""}`;
       }
-      html += `<div class="task"><div class="task-top"><div class="task-name">${label}</div><div class="state">${state}</div></div>${body}</div>`;
+      html += `<div class="task s-${st}"><div class="task-top"><div class="task-name">${label}</div><div class="state">${state}</div></div>${body}</div>`;
     }
     html += `<p class="hint">After you send a count your admin approves it, and you're notified. Approved counts are locked — ask your admin if one is wrong.</p>`;
   }
   p.innerHTML = html;
-  p.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => { day = b.dataset.day; paneToday(); }));
-  $("pick").onchange = (e) => { if (e.target.value >= minDay() && e.target.value <= t) { day = e.target.value; paneToday(); } else toast("Pick today or one of the last 7 days", true); };
+  wireDateNav(p, day, min, t, (d) => { day = d; paneToday(); }, "Pick today or one of the last 7 days");
+  p.querySelectorAll("[data-tdept]").forEach((b) => (b.onclick = () => { tdept = b.dataset.tdept || null; paneToday(); }));
   const send = async (job, qty, btn) => {
     btn.disabled = true;
     try {
@@ -187,7 +287,7 @@ function paneToday() {
   p.querySelectorAll(".send").forEach((b) => (b.onclick = () => {
     const inp = p.querySelector(`input[data-job="${b.dataset.job}"]`);
     const q = KPI.parseQty(inp.value);
-    inp.classList.toggle("bad", Number.isNaN(q) || !(q > 0));
+    inp.closest(".qty").classList.toggle("bad", Number.isNaN(q) || !(q > 0));
     if (Number.isNaN(q) || !(q > 0)) return toast("Type a number (more than 0)", true);
     send(Number(b.dataset.job), q, b);
   }));
@@ -195,20 +295,111 @@ function paneToday() {
   p.querySelectorAll(".withdraw").forEach((b) => (b.onclick = () => { if (confirm("Withdraw this count?")) send(Number(b.dataset.job), null, b); }));
 }
 
-// ───────── Performance: the same profile as on the TV, plus a list of recent counts ─────────
+// ───────── Performance: any day (‹ date ›), how it compares, and Daily / Weekly / Monthly charts ─────────
+let pday = null;   // day shown; null = the latest day with counts
+let pkey = null;   // what the chart follows: "d:Sheets" = all their Sheets tasks, or one task id
+let pkeyPicked = null;  // the one they tapped; until then the chart follows the day shown
+const PERS = ["daily", "weekly", "monthly"];
 function panePerf() {
   const p = $("pane");
-  const d = KPI.liveDay(data);
+  const t = KPI.todayKey(), live = KPI.liveDay(data), d = pday || live, min = KPI.addDays(t, -399);
   const person = KPI.empSummary(data, me, d);
+  const st = KPI.status(person.today.index);
+
+  // Chart choices: whole departments (main first), then their recent tasks
+  const recent = KPI.recentJobs(data, me.name);
+  const rank = (x) => { const i = me.departments.indexOf(x); return i < 0 ? 99 : i; };
+  const depts = [...new Set([...person.today.parts.map((x) => x.dept), ...recent.map((id) => data.jobById[id]?.department)].filter(Boolean))].sort((a, b) => rank(a) - rank(b));
+  const keys = [...depts.map((x) => "d:" + x), ...[...new Set([...person.today.parts.map((x) => x.id), ...recent])].filter((id) => data.jobById[id]).slice(0, 4)];
+  pkey = keys.includes(pkeyPicked) ? pkeyPicked : null;
+  if (pkey == null) {
+    const lead = person.mainPart || !person.today.parts.length ? person.mainDept : person.today.parts[0].dept;
+    pkey = keys.includes("d:" + lead) ? "d:" + lead : keys[0] ?? null;
+  }
+  const isDept = typeof pkey === "string", job = isDept ? null : data.jobById[pkey], kdept = isDept ? pkey.slice(2) : job?.department;
+  const unit = isDept ? KPI.unit(data, kdept) : job?.unit || "", color = KPI.deptColor(kdept);
+  const keyLabel = (k) => (typeof k === "string" ? "All " + k.slice(2) : KPI.jobLabel(data.jobById[k]));
+
+  // 1. The day: big number, then each task against everyone's average on it
+  const main = person.mainPart;
+  const rows = person.today.parts.map((x) => {
+    const s = KPI.status(x.ratio);
+    return `<div class="prow"><div class="prow-h"><span>${dot(x.dept)}${esc(x.label)}</span><span><b>${fmtFull(x.qty)}</b> <span class="muted">${esc(x.unit)}</span></span></div>
+      <div class="bar"><span class="bg-${s.key}" style="width:${KPI.ratioW(x.ratio)}%"></span><i class="tgt" style="left:${KPI.AVG_TICK}%"></i></div>
+      <div class="prow-f"><span>${x.n > 1 ? `average of ${x.n} people: ${fmtFull(x.avg)}` : "only you on this task"}</span>${KPI.pill(x.ratio, x.n > 1 ? KPI.vsAvg(x.ratio) : "only one")}</div></div>`;
+  }).join("");
+  const dayCard = `<section class="card pcard">
+      <div class="pday-h"><h2>Your counts</h2>${person.today.has ? KPI.pill(person.today.index, st.label) : ""}</div>
+      ${main ? `<div class="pbig"><b class="st-${st.key}">${fmtFull(main.qty)}</b><span>${esc(main.unit)} · ${esc(main.label)}</span></div>`
+        : person.today.has ? `<p class="hint">No ${esc(person.mainDept)} count this day — your other counts are below.</p>` : ""}
+      ${rows || `<div class="empty-card">No counts on this day.<br>Use ‹ › or the calendar to see another day.</div>`}
+      ${rows ? `<p class="hint" style="margin:12px 0 0">The tick on each bar is the average of everyone on that task that day.</p>` : ""}
+    </section>`;
+
+  // 2. The 7 working days up to this day, for what the chart follows
+  const week = pkey == null ? [] : KPI.empJobSeries(data, me.name, pkey, d, 7);
+  const best = Math.max(-1, ...week.map((x) => x.v ?? -1));
+  const avg7 = pkey == null ? null : KPI.weekAvg(data, me.name, pkey, d);
+  const stats = pkey == null ? "" : `<div class="stats">
+      <div class="stat"><small>7-day avg</small><b>${KPI.fmtNum(avg7)}</b><span>${esc(unit)}</span></div>
+      <div class="stat"><small>Best day</small><b>${best < 0 ? "–" : KPI.fmtNum(best)}</b><span>${esc(unit)}</span></div>
+      <div class="stat"><small>Days worked</small><b>${person.daysWorked}</b><span>of the last 7</span></div></div>`;
+
+  // 3. Chart: Daily (7 working days) / Weekly (8 weeks) / Monthly (12 months), ending at this day
+  const per = PERS.includes(KPI.period()) ? KPI.period() : "daily";
+  const bars = pkey == null ? [] : KPI.periodBars(data, me.name, pkey, d, per);
+  const vals = bars.map((b) => b.v).filter((v) => v != null), barAvg = KPI.mean(vals);
+  const max = Math.max(1, (barAvg || 0) * 1.25, ...bars.map((b) => (b.v || 0) * 1.18));
+  const days7 = per === "daily" ? KPI.workDays(d, 7) : [];
+  const cols = bars.map((b, i) => {
+    const h = b.v == null ? 0 : b.v / max * 100;
+    const tip = `${b.title}: ${b.v == null ? "no counts" : fmtFull(b.v) + " " + unit}${per === "daily" || b.v == null ? "" : ` · ${b.days} day${b.days === 1 ? "" : "s"} worked`}`;
+    return `<div class="c7 ${b.cur ? "today" : ""}" ${days7[i] ? `data-pday="${days7[i]}" role="button" tabindex="0"` : ""} title="${esc(tip)}"><div class="c7-track">
+        <div class="c7-b" style="height:${h}%;background-color:${color}"></div>
+        <div class="c7-v" style="bottom:calc(${h}% + 4px)"><span>${b.v == null ? "–" : KPI.fmtNum(b.v)}</span></div></div>
+        <div class="c7-d">${esc(per === "monthly" ? b.label.split(" ")[0] : b.label)}</div></div>`;
+  }).join("");
+  const cur = bars[bars.length - 1];
+  const word = { daily: "day", weekly: "week", monthly: "month" }[per];
+  const chart = `<section class="card pcard">
+      <div class="pchart-h"><h2>${{ daily: "Daily", weekly: "Weekly", monthly: "Monthly" }[per]}</h2><span>${{ daily: "last 7 working days", weekly: "last 8 weeks", monthly: "last 12 months" }[per]}${unit ? " · " + esc(unit) : ""}</span></div>
+      <div class="seg3" role="group" aria-label="Chart period">${PERS.map((k) => `<button type="button" data-period="${k}" class="${k === per ? "on" : ""}" aria-pressed="${k === per}">${KPI.PERIODS[k].label}</button>`).join("")}</div>
+      ${keys.length > 1 ? `<div class="chips" role="group" aria-label="What the chart shows">${keys.map((k) => `<button type="button" data-key="${esc(k)}" class="${k === pkey ? "on" : ""}" aria-pressed="${k === pkey}">${dot(typeof k === "string" ? k.slice(2) : data.jobById[k].department)}${esc(keyLabel(k))}</button>`).join("")}</div>` : ""}
+      ${stats}
+      ${bars.length ? `<div class="pchart"><div class="cols7 n${bars.length}">${cols}</div></div>
+        <div class="ptot"><span>${esc(cur.title)}: <b>${cur.v == null ? "no counts" : fmtFull(cur.v) + " " + esc(unit)}</b></span>${barAvg != null ? `<span>average <b>${fmtFull(barAvg)}</b> per ${word}</span>` : ""}</div>
+        ${per === "daily" ? `<p class="hint" style="margin:8px 0 0">Tap a bar to see that day.</p>` : ""}`
+      : `<div class="empty-card" style="margin-top:14px">No counts yet.</div>`}
+    </section>`;
+
+  // 4. Every count in the chart's current stretch: the 7 days, that week, or that month
+  const D = KPI.parseDay(d);
+  const [from, to, range] = per === "weekly" ? (() => { const mon = KPI.addDays(d, -((D.getDay() + 6) % 7)); return [mon, KPI.addDays(mon, 6), "week of " + fmtDay(mon)]; })()
+    : per === "monthly" ? [KPI.dayKey(new Date(D.getFullYear(), D.getMonth(), 1)), KPI.dayKey(new Date(D.getFullYear(), D.getMonth() + 1, 0)), D.toLocaleDateString(undefined, { month: "long", year: "numeric" })]
+    : [days7[0] || d, d, "last 7 working days"];
   const subs = {};
   data.submissions.forEach((s) => { subs[s.date + "|" + s.job] = s; });
-  const rows = [...data.entries].filter((e) => e.employee === me.name).sort((a, b) => b.date.localeCompare(a.date) || a.job - b.job).slice(0, 40);
-  p.innerHTML = `<section class="ps">${KPI.personView(person, d, data)}</section>
-    <section class="hist card panel"><h2>Recent counts</h2>${rows.length ? rows.map((e) => {
+  const list = data.entries.filter((e) => e.employee === me.name && e.date >= from && e.date <= to).sort((a, b) => b.date.localeCompare(a.date) || a.job - b.job).slice(0, 80);
+  let lastDay = null;
+  const hist = `<section class="hist card pcard"><h2>Counts · ${esc(range)}</h2>${list.length ? list.map((e) => {
       const j = data.jobById[e.job], s = subs[e.date + "|" + e.job];
       const how = s?.status === "edited" ? `<small class="st-warning">changed (you sent ${fmtFull(s.qty)})</small>` : s ? `<small class="muted">approved</small>` : `<small class="muted">by admin</small>`;
-      return `<div class="hist-row"><span class="d">${esc(KPI.fmtDate(e.date))}</span><span>${dot(j.department)}${esc(KPI.jobLabel(j))}</span><span class="q">${fmtFull(e.qty)} ${esc(j.unit)}${how}</span></div>`;
-    }).join("") : '<p class="hint">No counts yet.</p>'}</section>`;
+      const head = e.date !== lastDay ? `<div class="hist-day">${esc(fmtDay(e.date))}</div>` : "";
+      lastDay = e.date;
+      return `${head}<div class="hist-row"><span>${dot(j.department)}${esc(KPI.jobLabel(j))}</span><span class="q">${fmtFull(e.qty)} ${esc(j.unit)}${how}</span></div>`;
+    }).join("") : '<p class="hint">No counts in this stretch.</p>'}</section>`;
+
+  p.innerHTML = dateNav(d, min, t)
+    + (pday && pday !== live ? `<div class="dn-live"><span>Viewing an earlier day</span><button type="button" class="linkbtn" id="to-live">Back to latest</button></div>` : "")
+    + dayCard + chart + hist;
+  const go = (x) => { pday = x === live ? null : x; panePerf(); };
+  wireDateNav(p, d, min, t, go, "Pick a day in the last 400 days");
+  $("to-live")?.addEventListener("click", () => go(live));
+  p.querySelectorAll("[data-key]").forEach((b) => (b.onclick = () => { pkeyPicked = /^\d+$/.test(b.dataset.key) ? Number(b.dataset.key) : b.dataset.key; panePerf(); }));
+  p.querySelectorAll("[data-pday]").forEach((c) => {
+    c.onclick = () => go(c.dataset.pday);
+    c.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(c.dataset.pday); } };
+  });
 }
 
 // ───────── Notifications ─────────
