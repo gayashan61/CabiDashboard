@@ -15,8 +15,8 @@ A sanitised snapshot of Claude's working memory is in [`claude/memory/`](claude/
 
 ## Map
 - `index.html`: sign-in for everyone, then routes. Admin/TV → screen chooser; employee → `me.html`.
-- `admin.html`: admin console with tabs Daily entry (Excel-like sheet + counts waiting for approval), Tasks, Departments, Employees (logins, task lists, TV logins, bulk logins).
-- `me.html`: employee page (My tasks: send counts; Performance; notifications).
+- `admin.html`: admin console with tabs Daily entry (Excel-like sheet + counts waiting for approval), Tasks (each task's **People** button / the popup after adding tasks: give a task to many people at once via `save_assignments`, only changed people are saved), Departments, Employees (logins, task lists, TV logins, bulk logins).
+- `me.html`: employee page (My tasks: send counts, ‹ date › bar for the last 7 days, progress + department filter; Performance: ‹ date › bar back 400 days, Daily / Weekly / Monthly chart card; notifications).
 - `tv-slides.html`, `tv-grid.html`, `tv-departments.html`: wall screens (admin or TV account).
 - `assets/core.js`: shared `KPI` API. Plain REST to Supabase, sessions, charts, avatars, icons, `noteHTML` notification cards, `setupPush`.
 - `assets/config.js`: names, Supabase URL + publishable key, `LOGIN_DOMAIN`, `ANDROID_PUSH`, thresholds.
