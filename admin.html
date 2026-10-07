@@ -178,6 +178,28 @@
   .tk input { width: 18px; height: 18px; accent-color: var(--accent); flex: 0 0 auto; }
   .tk span { flex: 1; min-width: 0; }
   .tk small { color: var(--muted); }
+  /* "Who does this task?": pick people for one task (or the tasks just added) */
+  .pp-task { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pp-task span { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); font-size: 13px; font-weight: 600; }
+  .pp-task small { margin-left: 6px; color: var(--muted); font-weight: 500; }
+  .pp-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .pp-tools .t-q { flex: 1 1 220px; width: auto; }
+  .pp-list { overflow-y: auto; min-height: 160px; max-height: 50vh; border: 1px solid var(--border); border-radius: 12px; }
+  .pp-h { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; gap: 8px; padding: 8px 12px; background: var(--surface-2); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .pp { display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 8px 12px; border-bottom: 1px solid var(--grid); cursor: pointer; }
+  .pp:hover { background: var(--surface-2); }
+  .pp input { width: 20px; height: 20px; accent-color: var(--accent); flex: 0 0 auto; }
+  .pp-n { flex: 1; min-width: 0; }
+  .pp-n b { display: block; font-weight: 600; }
+  .pp-n small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; }
+  .pp-tag { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .pp-tag.add { background: var(--good-soft); color: var(--good-ink); }
+  .pp-tag.rm { background: var(--critical-soft); color: var(--critical-ink); }
+  .pp-tag.nolog { background: var(--none-soft); color: var(--none-ink); }
+  #pp .dlg-btns #pp-n { flex: 1 1 100%; } /* the count on its own line; Cancel and Save stay together */
+  #pp .dlg-btns .sp { display: none; } #pp .dlg-btns .btn { flex: 1; }
+  .ppl { white-space: nowrap; }
+  .ppl svg { width: 16px; height: 16px; }
   /* logins in the employees / TV tables */
   .login-u { display: inline-flex; align-items: center; gap: 5px; margin-right: 8px; font-family: ui-monospace, Consolas, monospace; }
   .login-u svg { width: 14px; height: 14px; color: var(--accent-ink); }
@@ -964,15 +986,17 @@ function viewJobs() {
     <td data-label="Machine / type (optional)"><input class="mc" value="${esc(j.machine || "")}" placeholder="—" aria-label="Machine or type (optional)"></td>
     <td data-label="Task"><input class="nm" value="${esc(j.name || "")}" placeholder="Task name" aria-label="Task name"></td>
     <td data-label="Unit"><input class="un" value="${esc(j.unit || "")}" placeholder="pcs" aria-label="Unit"></td>
+    <td data-label="People">${j.id ? `<button type="button" class="btn ppl" title="Choose who does this task">${KPI.ICONS.user}<span>${peopleWord(j.id)}</span></button>` : '<span class="hint">Save to choose people</span>'}</td>
     <td><button type="button" class="btn danger del">${KPI.ICONS.trash} Remove</button></td></tr>`;
   v.innerHTML = `<p class="hint">These are the rows of the <b>Daily entry</b> sheet, in the same order. <b>Machine / type</b> is optional (RT1, Collator 2 …).
     Each task has its own <b>unit</b>: people are compared with others who did the same task that day, and a department's total on the TV adds up the tasks counted in the department's unit (set in the Departments tab).
-    Removing a task hides it; its past counts stay saved, and adding it back with the same name brings them back.</p>
+    Removing a task hides it; its past counts stay saved, and adding it back with the same name brings them back.
+    <b>People</b> chooses who does a task: tick several people at once and it's added to all their task lists.</p>
     ${data.departments.length ? `<div class="toolbar"><nav class="dtabs" id="jtabs" aria-label="Department">${data.departments.map((d) =>
       `<button type="button" data-d="${esc(d.name)}" class="${d.name === tasksDept ? "on" : ""}" aria-pressed="${d.name === tasksDept}">${dot(d.name)}${esc(d.name)}<span class="n"></span></button>`).join("")}</nav></div>` : ""}
     ${data.departments.map((d) => `<div class="card tcard jobs-card" data-dept="${esc(d.name)}" ${d.name === tasksDept ? "" : "hidden"}>
       <div class="jobs-h">${dot(d.name)}<b>${esc(d.name)}</b><span class="hint">department total counts <b>${esc(d.unit)}</b></span></div>
-      <table class="t job-table"><thead><tr><th style="width:92px">Order</th><th style="width:26%">Machine / type</th><th>Task</th><th style="width:150px">Unit</th><th style="width:110px"></th></tr></thead>
+      <table class="t job-table"><thead><tr><th style="width:92px">Order</th><th style="width:26%">Machine / type</th><th>Task</th><th style="width:130px">Unit</th><th style="width:140px">People</th><th style="width:110px"></th></tr></thead>
       <tbody>${data.jobs.filter((j) => j.active && j.department === d.name).map(row).join("")}</tbody></table>
       <div class="jobs-add"><button type="button" class="btn add">+ Add task to ${esc(d.name)}</button></div></div>`).join("") || '<p class="hint">Add a department first in the Departments tab.</p>'}
     <div class="savebar"><button class="btn primary" id="save">Save tasks</button><span class="hint" id="chg"></span></div>`;
@@ -991,6 +1015,8 @@ function viewJobs() {
   });
   v.querySelector("#jtabs")?.addEventListener("click", (e) => { const b = e.target.closest("[data-d]"); if (b) show(b.dataset.d); });
   countTasks();
+  // after people are chosen: just the counts change, so unsaved edits in the table stay
+  const paintPeople = () => v.querySelectorAll("tr[data-id] .ppl span").forEach((sp) => { const id = sp.closest("tr").dataset.id; if (id) sp.textContent = peopleWord(Number(id)); });
 
   v.querySelectorAll(".jobs-card").forEach((card) => {
     const tb = card.querySelector("tbody");
@@ -999,6 +1025,7 @@ function viewJobs() {
     card.querySelector(".add").onclick = () => { tb.insertAdjacentHTML("beforeend", row({ unit })); tb.lastElementChild.querySelector(".nm").focus(); mark(); };
     tb.addEventListener("click", (e) => {
       const tr = e.target.closest("tr"); if (!tr) return;
+      if (e.target.closest(".ppl")) return peopleDialog([Number(tr.dataset.id)], paintPeople);
       if (e.target.closest(".up") && tr.previousElementSibling) { tb.insertBefore(tr, tr.previousElementSibling); mark(); }
       if (e.target.closest(".dn") && tr.nextElementSibling) { tb.insertBefore(tr.nextElementSibling, tr); mark(); }
       if (e.target.closest(".del")) {
@@ -1020,8 +1047,13 @@ function viewJobs() {
         seen.add(k); rows.push(r);
       }
     }
-    try { await KPI.saveJobs(rows); await reloadData(); dirty = false; toast("Tasks saved"); viewJobs(); }
-    catch (e) { failed(e); }
+    const key = (r) => [r.department, r.machine || "", r.name].join("|").toLowerCase();
+    const added = new Set(rows.filter((r) => r.id == null).map(key));
+    try {
+      await KPI.saveJobs(rows); await reloadData(); dirty = false; toast("Tasks saved"); viewJobs();
+      const fresh = data.jobs.filter((j) => j.active && added.has(key(j))).map((j) => j.id);
+      if (fresh.length) peopleDialog(fresh, viewJobs, true);
+    } catch (e) { failed(e); }
   };
 }
 
@@ -1224,6 +1256,83 @@ function tasksDialog(name, onDone) {
     d.querySelector("#t-ok").disabled = true;
     try { await KPI.saveAssignments(name, ids); d.close(); toast(`Saved ${ids.length} task(s) for ${name}`); onDone?.(); }
     catch (ex) { d.querySelector("#t-err").textContent = ex.message; d.querySelector("#t-ok").disabled = false; }
+  };
+}
+
+// "Who does this task?" — tick several people at once (search, select all shown). Used from the Tasks tab
+// for one task, and straight after saving new tasks. Only the people whose tick changed are saved:
+// each gets their own task list plus (or minus) these tasks, and newly added people are notified as usual.
+const peopleOn = (id) => admin.assignments.filter(([, j]) => Number(j) === id).length;
+const peopleWord = (id) => { const n = peopleOn(id); return n ? `${n} ${n === 1 ? "person" : "people"}` : "Choose people"; };
+function peopleDialog(jobIds, onDone, fresh = false) {
+  const jobs = jobIds.map((id) => data.jobById[id]).filter(Boolean);
+  if (!jobs.length) return;
+  const depts = [...new Set(jobs.map((j) => j.department))];
+  const people = data.employees.filter((e) => e.name && e.active !== false);
+  const inDept = (e) => (e.departments || []).some((x) => depts.includes(x));
+  const hasAll = (name) => { const t = new Set(tasksOf(name)); return jobs.every((j) => t.has(j.id)); };
+  const was = new Set(people.filter((e) => hasAll(e.name)).map((e) => e.name));
+  const groups = [[`In ${depts.join(", ")}`, people.filter(inDept)], ["Other departments", people.filter((e) => !inDept(e))]].filter(([, l]) => l.length);
+  const what = jobs.length === 1 ? "this task" : `these ${jobs.length} tasks`;
+  const d = modal(`<form method="dialog" class="dlg-in wide" id="pp">
+    <h2>${fresh ? (jobs.length === 1 ? "New task: who does it?" : "New tasks: who does them?") : "Who does this task?"}</h2>
+    <div class="pp-task">${jobs.map((j) => `<span>${dot(j.department)}${esc(j.department)} · ${esc(KPI.jobLabel(j))}<small>${esc(j.unit)}</small></span>`).join("")}</div>
+    <p class="hint">Tick everyone who does ${what}. It's added to their task list in the app and they get a notification. Untick someone to take it off their list.</p>
+    <div class="pp-tools"><input type="search" class="t-q" id="pp-q" placeholder="Search people…" aria-label="Search people" autocomplete="off">
+      <button type="button" class="btn" id="pp-all">Select all shown</button><button type="button" class="btn" id="pp-none">Clear shown</button></div>
+    <div class="pp-list">${groups.map(([h, list]) => `<div class="pp-g"><div class="pp-h"><span>${esc(h)}</span><span class="pp-c"></span></div>${list.map((e) => `
+      <label class="pp" data-s="${esc([e.name, admin.logins?.[e.name] || "", ...(e.departments || [])].join(" ").toLowerCase())}">
+        <input type="checkbox" value="${esc(e.name)}" ${was.has(e.name) ? "checked" : ""}>${KPI.avatar(e, { size: "34px" })}
+        <span class="pp-n"><b>${esc(e.name)}</b><small>${(e.departments || []).map(esc).join(" · ")}</small></span>
+        ${admin.logins?.[e.name] ? "" : `<span class="pp-tag nolog" title="No login yet: they see their tasks once they have one">no login</span>`}<span class="pp-tag st" hidden></span>
+      </label>`).join("")}</div>`).join("")}</div>
+    <div class="err" id="pp-err"></div>
+    <div class="dlg-btns"><span class="hint" id="pp-n"></span><span class="sp"></span><button type="button" class="btn" data-close>${fresh ? "Skip" : "Cancel"}</button><button type="submit" class="btn primary" id="pp-ok">Save</button></div>
+  </form>`);
+  const boxes = [...d.querySelectorAll(".pp input")];
+  const ok = d.querySelector("#pp-ok");
+  const diff = () => ({ add: boxes.filter((b) => b.checked && !was.has(b.value)).map((b) => b.value), rm: boxes.filter((b) => !b.checked && was.has(b.value)).map((b) => b.value) });
+  const paint = () => {
+    const { add, rm } = diff();
+    boxes.forEach((b) => {
+      const t = b.closest(".pp").querySelector(".st"), a = b.checked && !was.has(b.value), r = !b.checked && was.has(b.value);
+      t.hidden = !a && !r; t.className = "pp-tag st " + (a ? "add" : "rm"); t.textContent = a ? "add" : "remove";
+    });
+    d.querySelectorAll(".pp-g").forEach((g) => { const bs = [...g.querySelectorAll("input")]; g.querySelector(".pp-c").textContent = `${bs.filter((b) => b.checked).length} of ${bs.length}`; });
+    d.querySelector("#pp-n").textContent = `${boxes.filter((b) => b.checked).length} selected${add.length ? ` · ${add.length} to add` : ""}${rm.length ? ` · ${rm.length} to remove` : ""}`;
+    ok.disabled = !add.length && !rm.length;
+  };
+  d.addEventListener("change", paint); paint();
+  const shown = () => boxes.filter((b) => !b.closest(".pp").hidden);
+  d.querySelector("#pp-q").oninput = (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    d.querySelectorAll(".pp").forEach((l) => { l.hidden = !!q && !l.dataset.s.includes(q); });
+    d.querySelectorAll(".pp-g").forEach((g) => { g.hidden = ![...g.querySelectorAll(".pp")].some((l) => !l.hidden); });
+  };
+  d.querySelector("#pp-q").onkeydown = (e) => { if (e.key === "Enter") e.preventDefault(); };
+  d.querySelector("#pp-all").onclick = () => { shown().forEach((b) => (b.checked = true)); paint(); };
+  d.querySelector("#pp-none").onclick = () => { shown().forEach((b) => (b.checked = false)); paint(); };
+  d.querySelector("#pp").onsubmit = async (e) => {
+    e.preventDefault();
+    const { add, rm } = diff(), todo = [...add, ...rm], errs = [];
+    ok.disabled = true; d.querySelector("#pp-err").textContent = "";
+    try { admin.assignments = (await KPI.adminData()).assignments || admin.assignments; } catch (ex) {}  // latest lists before changing them
+    let n = 0;
+    for (const name of todo) {
+      ok.textContent = `Saving ${n + 1} of ${todo.length}…`;
+      const mine = new Set(tasksOf(name));
+      jobs.forEach((j) => (add.includes(name) ? mine.add(j.id) : mine.delete(j.id)));
+      try { await KPI.saveAssignments(name, [...mine]); n++; }
+      catch (ex) { errs.push(`${name}: ${ex.message}`); if (KPI.isAuthProblem(ex.message)) break; }
+    }
+    try { await reloadData(); } catch (ex) {}
+    onDone?.();
+    const ppl = (k) => `${k} ${k === 1 ? "person" : "people"}`;
+    const msg = [add.length && `added to ${ppl(add.length)}`, rm.length && `taken off ${ppl(rm.length)}`].filter(Boolean).join(", ");
+    if (!errs.length) { d.close(); toast(`${jobs.length === 1 ? KPI.jobLabel(jobs[0]) : jobs.length + " tasks"}: ${msg}`); return; }
+    d.querySelector("#pp-err").innerHTML = `Saved ${n} of ${todo.length}. Not saved:<br>${errs.map(esc).join("<br>")}`;
+    ok.textContent = "Save"; ok.hidden = true;
+    d.querySelector("[data-close]").textContent = "Close";
   };
 }
 
