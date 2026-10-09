@@ -384,6 +384,9 @@ body.history .date-pick { background: var(--accent-soft); border-color: color-mi
 .company::before { content: ""; flex: 0 0 auto; width: 16px; height: 10px; background: repeating-linear-gradient(180deg, var(--brand-pink) 0 2px, transparent 2px 4px); }
 .who-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: -16px 0 20px; color: var(--muted); font-size: 14px; }
 .who-bar b { color: var(--ink); }
+/* small "Privacy policy" link (sign-in page, employee page) */
+.pp-link { text-align: center; margin: 16px 0 calc(8px + env(safe-area-inset-bottom, 0px)); font-size: 13px; }
+.pp-link a { color: var(--muted); }
 
 /* ---------- Notification cards (employee page, admin bell): colour band + icon + label by what happened ---------- */
 .nt { --t: var(--accent); --ti: var(--accent-ink); --ts: var(--accent-soft);

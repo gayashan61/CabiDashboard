@@ -144,7 +144,7 @@
     return sbSession.access_token;
   }
   const sbRpc = (fn, args, opts) => sbFetch("/rest/v1/rpc/" + fn, args, opts);
-  // "akila" ➜ akila@tiljay.local (keep the domain in sync with supabase/functions/admin-users)
+  // "kasun" ➜ kasun@tiljay.local (keep the domain in sync with supabase/functions/admin-users)
   const loginEmail = (login) => {
     const s = String(login || "").trim().toLowerCase();
     return s.includes("@") ? s : `${s}@${CFG.LOGIN_DOMAIN || "tiljay.local"}`;
@@ -211,7 +211,7 @@
       try { return await KPI.whoami(); } catch (e) { if (isAuthProblem(e.message)) sbKeep(null); return null; }
     },
     signedIn() { return !!sbSession; },
-    // "akila" for username logins, the email for others
+    // "kasun" for username logins, the email for others
     signedInAs() {
       const e = sbSession?.email || "", dom = "@" + (CFG.LOGIN_DOMAIN || "tiljay.local");
       return e.endsWith(dom) ? e.slice(0, -dom.length) : e;

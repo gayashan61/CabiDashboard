@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Privacy Policy · Tiljay CF Pro</title>
+<meta name="description" content="How the Tiljay CF Pro app and website collect, use and protect employees' data.">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/config.js"></script>
+<script src="assets/theme.js"></script>
+<style>
+  /* A plain, readable page: public, no sign-in, works without any data from the database */
+  .policy { max-width: 760px; margin: 0 auto; padding: calc(40px + env(safe-area-inset-top, 0px)) 20px calc(56px + env(safe-area-inset-bottom, 0px)); font-size: 16px; line-height: 1.65; color: var(--ink-2); }
+  .policy header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
+  .policy header img { width: 64px; height: 64px; border-radius: 16px; background: #fff; padding: 4px; box-shadow: var(--shadow); flex: none; }
+  .policy h1 { margin: 0; font-size: 30px; line-height: 1.15; letter-spacing: -0.02em; color: var(--ink); }
+  .policy h2 { margin: 34px 0 8px; font-size: 19px; color: var(--ink); letter-spacing: -0.01em; }
+  .policy p, .policy ul { margin: 0 0 12px; }
+  .policy ul { padding-left: 22px; }
+  .policy li { margin: 4px 0; }
+  .policy b { color: var(--ink); }
+  .policy a { color: var(--accent-ink); }
+  .policy .meta { color: var(--muted); font-size: 14px; }
+  .policy table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 15px; }
+  .policy th, .policy td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--grid); }
+  .policy th { color: var(--ink); font-weight: 600; background: var(--surface-2); }
+  .policy .back { display: inline-block; margin-top: 30px; font-weight: 600; }
+  @media (max-width: 560px) { .policy h1 { font-size: 24px; } .policy table, .policy tbody, .policy tr, .policy td, .policy th { display: block; } .policy thead { display: none; } .policy td { border: 0; padding: 2px 0; } .policy tr { padding: 10px 0; border-bottom: 1px solid var(--grid); } .policy td:first-child { font-weight: 600; color: var(--ink); } }
+</style>
+</head>
+<body>
+<main class="policy">
+  <header>
+    <img src="assets/logo.png" alt="">
+    <div><h1>Privacy Policy</h1><div class="company">Tiljay CF Pro · Tiljay Computer Forms Production</div></div>
+  </header>
+  <p class="meta">Effective date: 9 October 2026</p>
+
+  <p>This policy explains what information the <b>Tiljay CF Pro</b> app and website (the "app") collect, why, who can see it, and the choices you have.
+    The app is provided by <b>Tiljay Computer Forms Production</b> ("we", "us") for its own employees. It records daily production work and shows it to the team.
+    It is not a public service: accounts are created only by the company's administrator.</p>
+
+  <h2>Information we collect</h2>
+  <table>
+    <thead><tr><th>Information</th><th>What it is</th><th>Why we use it</th></tr></thead>
+    <tbody>
+      <tr><td>Name and department</td><td>Your name and the department(s) you work in, entered by the administrator</td><td>To show your tasks and your work on the right screens</td></tr>
+      <tr><td>Login</td><td>Your username and password, set by the administrator. Passwords are stored only in protected (hashed) form.</td><td>To sign you in and show you only your own information</td></tr>
+      <tr><td>Profile photo (optional)</td><td>A photo the administrator may add for you</td><td>To show your picture next to your work on the team screens</td></tr>
+      <tr><td>Work records</td><td>The tasks assigned to you, the counts you send for each day, and whether they were approved, changed or rejected (with the administrator's note)</td><td>To record production and calculate performance</td></tr>
+      <tr><td>Notifications and device token</td><td>Messages sent to you in the app, and a technical token from Google Firebase that lets us send notifications to your phone</td><td>To tell you about new tasks and decisions on your counts</td></tr>
+      <tr><td>Technical logs</td><td>Standard server records such as IP address, time and browser type, kept by our hosting providers</td><td>To keep the service secure and working</td></tr>
+    </tbody>
+  </table>
+  <p>The app <b>does not</b> collect your location, contacts, messages, calendar, microphone or camera recordings. It has <b>no advertising</b> and <b>no tracking or analytics</b> for marketing, and it does not read other data on your phone.</p>
+
+  <h2>Who can see your information</h2>
+  <ul>
+    <li><b>You</b>: your own tasks, counts, performance history and notifications.</li>
+    <li><b>The company's administrators</b>: everyone's information, to approve counts and manage the team.</li>
+    <li><b>Colleagues at the factory</b>: the team screens (TVs) inside the factory show employees' names, photos, departments and daily counts. They are signed in with company TV accounts that can only view.</li>
+  </ul>
+  <p>We <b>do not sell</b> your information and do not share it with anyone for advertising.</p>
+
+  <h2>Service providers</h2>
+  <p>We use these companies to run the app. They process the information only on our behalf:</p>
+  <ul>
+    <li><b>Supabase</b>: database and sign-in (stores the information above)</li>
+    <li><b>Vercel</b>: hosts the website the app opens</li>
+    <li><b>Google Firebase Cloud Messaging</b>: delivers notifications to your phone</li>
+  </ul>
+  <p>Their servers may be outside Sri Lanka. We may also disclose information if the law requires it.</p>
+
+  <h2>How we protect it</h2>
+  <p>All information travels over encrypted connections (HTTPS). Access is controlled in the database itself: each login can reach only what its role allows. Employees see only their own records, TV accounts can only view, and only administrators can make changes.</p>
+
+  <h2>How long we keep it</h2>
+  <p>Work records are kept as the company's production records for as long as they are needed for that purpose. When you leave, the administrator removes your login and you can no longer sign in. Your past work records may be kept as part of the company's records unless you ask for them to be deleted (see below). Notifications and device tokens are removed when no longer needed, for example when you sign out.</p>
+
+  <h2>Your choices and rights</h2>
+  <ul>
+    <li>Ask to <b>see</b>, <b>correct</b> or <b>delete</b> your information, or to have your account removed: contact the administrator or use the email below.</li>
+    <li>Turn notifications off at any time in your phone's settings.</li>
+    <li>Signing out removes your phone from notifications.</li>
+  </ul>
+  <p>We handle requests in line with Sri Lanka's Personal Data Protection Act, No. 9 of 2022.</p>
+
+  <h2>Children</h2>
+  <p>The app is only for employees aged 18 or over and is not directed at children.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If we change this policy we will update this page and its effective date. Important changes will also be announced in the app.</p>
+
+  <h2>Contact</h2>
+  <p>Tiljay Computer Forms Production<br>Email: <a id="contact" href="mailto:CONTACT_EMAIL">CONTACT_EMAIL</a></p>
+
+  <a class="back" href="index.html">← Back to Tiljay CF Pro</a>
+</main>
+</body>
+</html>
