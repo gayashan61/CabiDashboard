@@ -17,3 +17,6 @@ tests/node_modules/
 tests/*shots/
 tests/*.png
 tests/dl*/
+
+# Google Play upload key settings (the key itself lives in docs/)
+mobile/android/keystore.properties
